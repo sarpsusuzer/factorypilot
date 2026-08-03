@@ -128,10 +128,13 @@ export type User = {
   is_platform_admin: boolean;
 };
 
+export type CompanyType = "uretici" | "musteri";
+
 export type Company = {
   id: string;
   name: string;
   logo_url: string | null;
   is_active: boolean;
   created_at: string;
+  company_type: CompanyType;
 };

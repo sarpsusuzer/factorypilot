@@ -18,6 +18,7 @@ import { colorForPosition } from "./stage-colors";
 import { newId, nextOrderNo } from "./storage";
 import type {
   Company,
+  CompanyType,
   FieldDefinition,
   FieldScope,
   FieldValue,
@@ -730,6 +731,7 @@ export async function updateSettings(patch: Partial<Settings>): Promise<Result> 
 
 export type CompanyInput = {
   name: string;
+  company_type: CompanyType;
   admin_name: string;
   admin_email: string;
   admin_password: string;
@@ -827,6 +829,21 @@ export async function setCompanyActive(companyId: string, isActive: boolean): Pr
   return { ok: true };
 }
 
+export async function setCompanyType(companyId: string, companyType: CompanyType): Promise<Result> {
+  const { error } = await supabase
+    .from("companies")
+    .update({ company_type: companyType })
+    .eq("id", companyId);
+  if (error) return { ok: false, error: error.message };
+
+  update({
+    companies: snapshot.companies.map((c) =>
+      c.id === companyId ? { ...c, company_type: companyType } : c,
+    ),
+  });
+  return { ok: true };
+}
+
 export async function setUserActive(userId: string, isActive: boolean): Promise<Result> {
   const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
@@ -913,6 +930,7 @@ export function useData() {
     renameCompany,
     updateCompanyAdmin,
     setCompanyActive,
+    setCompanyType,
     setUserActive,
     uploadCompanyLogo,
     actingUser,

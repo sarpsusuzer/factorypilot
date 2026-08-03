@@ -21,6 +21,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -29,7 +36,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useData } from "@/lib/data";
-import type { Company } from "@/lib/types";
+import type { Company, CompanyType } from "@/lib/types";
+
+const COMPANY_TYPE_LABELS: Record<CompanyType, string> = {
+  uretici: "Üretici",
+  musteri: "Müşteri",
+};
 
 export default function AdminCompaniesPage() {
   const {
@@ -41,9 +53,11 @@ export default function AdminCompaniesPage() {
     createCompany,
     renameCompany,
     setCompanyActive,
+    setCompanyType,
     updateCompanyAdmin,
   } = useData();
   const [name, setName] = useState("");
+  const [companyType, setNewCompanyType] = useState<CompanyType>("uretici");
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -73,6 +87,7 @@ export default function AdminCompaniesPage() {
     event.preventDefault();
     const result = await createCompany({
       name,
+      company_type: companyType,
       admin_name: adminName,
       admin_email: adminEmail,
       admin_password: adminPassword,
@@ -83,6 +98,7 @@ export default function AdminCompaniesPage() {
     }
     toast.success(`“${name.trim()}” eklendi.`);
     setName("");
+    setNewCompanyType("uretici");
     setAdminName("");
     setAdminEmail("");
     setAdminPassword("");
@@ -90,6 +106,11 @@ export default function AdminCompaniesPage() {
 
   async function handleToggleActive(companyId: string, isActive: boolean) {
     const result = await setCompanyActive(companyId, isActive);
+    if (!result.ok) toast.error(result.error);
+  }
+
+  async function handleTypeChange(companyId: string, type: CompanyType) {
+    const result = await setCompanyType(companyId, type);
     if (!result.ok) toast.error(result.error);
   }
 
@@ -155,6 +176,7 @@ export default function AdminCompaniesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ad</TableHead>
+                  <TableHead>Tür</TableHead>
                   <TableHead>Kullanıcı</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead className="w-80 text-right">İşlemler</TableHead>
@@ -190,6 +212,23 @@ export default function AdminCompaniesPage() {
                             {company.name}
                           </span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={company.company_type}
+                          onValueChange={(value) => handleTypeChange(company.id, value as CompanyType)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(COMPANY_TYPE_LABELS) as CompanyType[]).map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {COMPANY_TYPE_LABELS[type]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{userCount}</TableCell>
                       <TableCell className="text-muted-foreground">
@@ -257,6 +296,21 @@ export default function AdminCompaniesPage() {
                   onChange={(event) => setName(event.target.value)}
                   autoComplete="off"
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="company-type">Şirket türü</Label>
+                <Select value={companyType} onValueChange={(value) => setNewCompanyType(value as CompanyType)}>
+                  <SelectTrigger id="company-type" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(COMPANY_TYPE_LABELS) as CompanyType[]).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {COMPANY_TYPE_LABELS[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="admin-name">Yönetici adı</Label>

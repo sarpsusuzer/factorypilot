@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
   }
 
   const name = String(body.name ?? "").trim();
+  const companyType = body.company_type === "musteri" ? "musteri" : "uretici";
   const adminName = String(body.admin_name ?? "").trim();
   const adminEmail = String(body.admin_email ?? "").trim();
   const adminPassword = String(body.admin_password ?? "");
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
 
   const { data: company, error: companyError } = await admin
     .from("companies")
-    .insert({ name })
+    .insert({ name, company_type: companyType })
     .select()
     .single();
   if (companyError) return json({ error: companyError.message }, 400);
@@ -120,25 +121,14 @@ Deno.serve(async (req) => {
 
   const { error: fieldsError } = await admin.from("field_definitions").insert([
     {
-      key: "client_name",
-      label: "Müşteri adı",
-      type: "text",
-      options: [],
-      required: true,
-      scope: "order",
-      is_title_field: true,
-      position: 0,
-      company_id: company.id,
-    },
-    {
       key: "description",
       label: "Açıklama",
       type: "textarea",
       options: [],
       required: true,
       scope: "order",
-      is_title_field: false,
-      position: 1,
+      is_title_field: true,
+      position: 0,
       company_id: company.id,
     },
   ]);
