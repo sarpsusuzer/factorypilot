@@ -56,9 +56,9 @@ export default function StagesPage() {
     );
   }
 
-  function handleAdd(event: React.FormEvent) {
+  async function handleAdd(event: React.FormEvent) {
     event.preventDefault();
-    const result = addStage(newStage);
+    const result = await addStage(newStage);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -67,8 +67,8 @@ export default function StagesPage() {
     setNewStage("");
   }
 
-  function handleRename(stageId: string) {
-    const result = renameStage(stageId, editingName);
+  async function handleRename(stageId: string) {
+    const result = await renameStage(stageId, editingName);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -78,8 +78,8 @@ export default function StagesPage() {
     setEditingName("");
   }
 
-  function handleRemove(stageId: string) {
-    const result = removeStage(stageId);
+  async function handleRemove(stageId: string) {
+    const result = await removeStage(stageId);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -87,8 +87,8 @@ export default function StagesPage() {
     toast.success("Aşama silindi.");
   }
 
-  function handleColor(stageId: string, color: StageColor) {
-    const result = setStageColor(stageId, color);
+  async function handleColor(stageId: string, color: StageColor) {
+    const result = await setStageColor(stageId, color);
     if (!result.ok) {
       toast.error(result.error);
     }

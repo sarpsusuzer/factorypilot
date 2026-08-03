@@ -67,7 +67,7 @@ export default function NewOrderPage() {
     setItems(drafts.filter((item) => item.id !== itemId));
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
     const foundOrder = validateValues(perOrder, orderValues);
@@ -85,7 +85,7 @@ export default function NewOrderPage() {
       return;
     }
 
-    const result = createOrder({
+    const result = await createOrder({
       field_values: orderValues,
       items: drafts.map((item) => ({ field_values: item.values })),
     });

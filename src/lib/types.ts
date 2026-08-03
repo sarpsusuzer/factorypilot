@@ -88,9 +88,6 @@ export type StageHistoryEntry = {
 
 export type Settings = {
   overdue_threshold_days: number;
-  // Which user is "acting" this session — see roles.ts. Not real
-  // authentication: anyone can pick any user from the list.
-  acting_user_id: string | null;
 };
 
 /**
@@ -115,7 +112,8 @@ export type Role = {
 };
 
 export type User = {
-  id: string;
+  id: string; // matches the Supabase auth user id
   name: string;
+  email: string;
   role_id: string;
 };

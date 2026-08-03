@@ -30,13 +30,13 @@ export function OrdersKanban({
   const [overStage, setOverStage] = useState<string | null>(null);
   const canMove = can("move_stage");
 
-  function handleDrop(stageName: string) {
+  async function handleDrop(stageName: string) {
     setOverStage(null);
     const order = orders.find((o) => o.id === draggingId);
     setDraggingId(null);
     if (!order || order.current_stage === stageName || !canMove) return;
 
-    const result = moveOrderToStage(order.id, stageName);
+    const result = await moveOrderToStage(order.id, stageName);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -112,7 +112,7 @@ export function OrdersKanban({
                           </span>
                           <Button asChild variant="ghost" size="icon" className="-mt-1 -mr-1 size-6">
                             <Link
-                              href={`/orders/${order.id}`}
+                              href={`/orders/view?id=${order.id}`}
                               draggable={false}
                               aria-label={`${order.order_no} siparişini aç`}
                             >

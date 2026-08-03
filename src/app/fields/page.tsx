@@ -95,9 +95,9 @@ export default function FieldsPage() {
     };
   }
 
-  function handleAdd(event: React.FormEvent) {
+  async function handleAdd(event: React.FormEvent) {
     event.preventDefault();
-    const result = addField(toInput(form));
+    const result = await addField(toInput(form));
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -106,11 +106,11 @@ export default function FieldsPage() {
     setForm(BLANK);
   }
 
-  function handleSaveEdit(event: React.FormEvent) {
+  async function handleSaveEdit(event: React.FormEvent) {
     event.preventDefault();
     if (!editing) return;
 
-    const result = updateField(editing.id, toInput(form));
+    const result = await updateField(editing.id, toInput(form));
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -134,8 +134,8 @@ export default function FieldsPage() {
     });
   }
 
-  function handleRemove(field: FieldDefinition) {
-    const result = removeField(field.id);
+  async function handleRemove(field: FieldDefinition) {
+    const result = await removeField(field.id);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -143,8 +143,8 @@ export default function FieldsPage() {
     toast.success(`“${field.label}” silindi.`);
   }
 
-  function handleSetTitle(field: FieldDefinition) {
-    const result = setTitleField(field.id);
+  async function handleSetTitle(field: FieldDefinition) {
+    const result = await setTitleField(field.id);
     if (!result.ok) {
       toast.error(result.error);
       return;

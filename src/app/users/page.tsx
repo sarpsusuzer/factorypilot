@@ -30,11 +30,16 @@ import {
 import { useData } from "@/lib/data";
 
 export default function UsersPage() {
-  const { loaded, users, roles, actingUser, can, addUser, updateUser, removeUser } = useData();
+  const { loaded, users, roles, actingUser, can, addUser, updateUser, removeUser, setUserPassword } =
+    useData();
   const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [newRoleId, setNewRoleId] = useState(roles[0]?.id ?? "");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
 
   if (loaded && !can("manage_roles")) {
     return (
@@ -45,19 +50,37 @@ export default function UsersPage() {
     );
   }
 
-  function handleAdd(event: React.FormEvent) {
+  async function handleAdd(event: React.FormEvent) {
     event.preventDefault();
-    const result = addUser({ name: newName, role_id: newRoleId || roles[0]?.id || "" });
+    const result = await addUser({
+      name: newName,
+      email: newEmail,
+      role_id: newRoleId || roles[0]?.id || "",
+      password: newPassword,
+    });
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
     toast.success(`“${newName.trim()}” eklendi.`);
     setNewName("");
+    setNewEmail("");
+    setNewPassword("");
   }
 
-  function handleRename(userId: string, roleId: string) {
-    const result = updateUser(userId, { name: editingName, role_id: roleId });
+  async function handleResetPassword(userId: string, name: string) {
+    const result = await setUserPassword(userId, resetPassword);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(`“${name}” için şifre güncellendi.`);
+    setResettingId(null);
+    setResetPassword("");
+  }
+
+  async function handleRename(userId: string, roleId: string) {
+    const result = await updateUser(userId, { name: editingName, role_id: roleId });
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -66,13 +89,13 @@ export default function UsersPage() {
     setEditingName("");
   }
 
-  function handleRoleChange(userId: string, name: string, roleId: string) {
-    const result = updateUser(userId, { name, role_id: roleId });
+  async function handleRoleChange(userId: string, name: string, roleId: string) {
+    const result = await updateUser(userId, { name, role_id: roleId });
     if (!result.ok) toast.error(result.error);
   }
 
-  function handleRemove(userId: string, name: string) {
-    const result = removeUser(userId);
+  async function handleRemove(userId: string, name: string) {
+    const result = await removeUser(userId);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -85,7 +108,7 @@ export default function UsersPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Kullanıcılar</h1>
         <p className="text-sm text-muted-foreground">
-          Kimlik seçiciden hangi isimlerin seçilebileceğini ve her birinin rolünü belirler.
+          Kimlerin giriş yapabileceğini, e-postalarını ve rollerini belirler.
         </p>
       </div>
 
@@ -99,8 +122,9 @@ export default function UsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Ad</TableHead>
+                <TableHead>E-posta</TableHead>
                 <TableHead>Rol</TableHead>
-                <TableHead className="w-56 text-right">İşlemler</TableHead>
+                <TableHead className="w-80 text-right">İşlemler</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,6 +153,7 @@ export default function UsersPage() {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
                       <Select
                         value={user.role_id}
@@ -157,6 +182,27 @@ export default function UsersPage() {
                               Vazgeç
                             </Button>
                           </>
+                        ) : resettingId === user.id ? (
+                          <>
+                            <Input
+                              type="password"
+                              value={resetPassword}
+                              onChange={(event) => setResetPassword(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") handleResetPassword(user.id, user.name);
+                                if (event.key === "Escape") setResettingId(null);
+                              }}
+                              placeholder="Yeni şifre"
+                              className="w-36"
+                              autoFocus
+                            />
+                            <Button size="sm" onClick={() => handleResetPassword(user.id, user.name)}>
+                              Kaydet
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setResettingId(null)}>
+                              Vazgeç
+                            </Button>
+                          </>
                         ) : (
                           <>
                             <Button
@@ -168,6 +214,16 @@ export default function UsersPage() {
                               }}
                             >
                               Yeniden adlandır
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setResettingId(user.id);
+                                setResetPassword("");
+                              }}
+                            >
+                              Şifre sıfırla
                             </Button>
                             <Button
                               size="sm"
@@ -189,14 +245,35 @@ export default function UsersPage() {
           </Table>
 
           <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 border-t pt-6 mt-6">
-            <div className="grid min-w-56 flex-1 gap-2">
-              <Label htmlFor="new-user">Kullanıcı ekle</Label>
+            <div className="grid min-w-48 flex-1 gap-2">
+              <Label htmlFor="new-user">Ad soyad</Label>
               <Input
                 id="new-user"
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
                 placeholder="Ad soyad"
                 autoComplete="off"
+              />
+            </div>
+            <div className="grid min-w-48 flex-1 gap-2">
+              <Label htmlFor="new-user-email">E-posta</Label>
+              <Input
+                id="new-user-email"
+                type="email"
+                value={newEmail}
+                onChange={(event) => setNewEmail(event.target.value)}
+                placeholder="ad@sirket.com"
+                autoComplete="off"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-user-password">Şifre</Label>
+              <Input
+                id="new-user-password"
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                autoComplete="new-password"
               />
             </div>
             <div className="grid gap-2">

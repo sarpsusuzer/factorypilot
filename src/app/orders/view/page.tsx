@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -49,8 +49,20 @@ import {
   timeInCurrentStage,
 } from "@/lib/reporting";
 
+// A dynamic [id] route can't be statically exported (order ids don't exist
+// until someone creates them in the browser) — so this reads the id from a
+// query param instead, which keeps routing entirely client-side.
 export default function OrderDetailPage() {
-  const params = useParams<{ id: string }>();
+  return (
+    <Suspense fallback={<p className="text-muted-foreground">Yükleniyor…</p>}>
+      <OrderDetail />
+    </Suspense>
+  );
+}
+
+function OrderDetail() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const router = useRouter();
   const {
     loaded,
@@ -66,7 +78,7 @@ export default function OrderDetailPage() {
     deleteOrder,
   } = useData();
 
-  const order = getOrder(params.id);
+  const order = getOrder(id);
   const [targetStage, setTargetStage] = useState<string>("");
 
   if (!loaded) {
@@ -96,14 +108,14 @@ export default function OrderDetailPage() {
   );
   const overdue = isOverdue(order, history, settings.overdue_threshold_days);
 
-  function handleMove() {
+  async function handleMove() {
     if (!order) return;
     if (!targetStage) {
       toast.error("Siparişin taşınacağı aşamayı seçin.");
       return;
     }
 
-    const result = moveOrderToStage(order.id, targetStage);
+    const result = await moveOrderToStage(order.id, targetStage);
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -113,9 +125,13 @@ export default function OrderDetailPage() {
     setTargetStage("");
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!order) return;
-    deleteOrder(order.id);
+    const result = await deleteOrder(order.id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     toast.success("Sipariş silindi.");
     router.push("/");
   }

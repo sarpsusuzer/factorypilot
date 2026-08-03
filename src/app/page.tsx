@@ -317,7 +317,7 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="outline" size="icon" className="rounded-full">
-                        <Link href={`/orders/${order.id}`} aria-label={`${order.order_no} siparişini aç`}>
+                        <Link href={`/orders/view?id=${order.id}`} aria-label={`${order.order_no} siparişini aç`}>
                           <Eye className="size-4" />
                         </Link>
                       </Button>

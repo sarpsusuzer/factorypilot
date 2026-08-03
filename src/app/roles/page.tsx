@@ -42,9 +42,9 @@ export default function RolesPage() {
     );
   }
 
-  function handleAdd(event: React.FormEvent) {
+  async function handleAdd(event: React.FormEvent) {
     event.preventDefault();
-    const result = addRole({ name: newRoleName, permissions: newRolePermissions });
+    const result = await addRole({ name: newRoleName, permissions: newRolePermissions });
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -54,8 +54,8 @@ export default function RolesPage() {
     setNewRolePermissions([]);
   }
 
-  function handleRename(roleId: string, permissions: Permission[]) {
-    const result = updateRole(roleId, { name: editingName, permissions });
+  async function handleRename(roleId: string, permissions: Permission[]) {
+    const result = await updateRole(roleId, { name: editingName, permissions });
     if (!result.ok) {
       toast.error(result.error);
       return;
@@ -64,13 +64,13 @@ export default function RolesPage() {
     setEditingName("");
   }
 
-  function handleToggle(roleId: string, permission: Permission) {
-    const result = toggleRolePermission(roleId, permission);
+  async function handleToggle(roleId: string, permission: Permission) {
+    const result = await toggleRolePermission(roleId, permission);
     if (!result.ok) toast.error(result.error);
   }
 
-  function handleRemove(roleId: string, name: string) {
-    const result = removeRole(roleId);
+  async function handleRemove(roleId: string, name: string) {
+    const result = await removeRole(roleId);
     if (!result.ok) {
       toast.error(result.error);
       return;
