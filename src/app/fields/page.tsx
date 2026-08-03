@@ -282,7 +282,7 @@ export default function FieldsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-6">
-              <FieldForm form={form} setForm={setForm} />
+              <FieldForm form={form} setForm={setForm} singleColumn />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditing(null)}>
