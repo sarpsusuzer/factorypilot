@@ -163,6 +163,7 @@ export default function FieldsPage() {
         </p>
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
       <Card>
         <CardHeader>
           <CardTitle>Alanlar</CardTitle>
@@ -281,6 +282,7 @@ export default function FieldsPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
 
       <Dialog
         open={editing !== null}
