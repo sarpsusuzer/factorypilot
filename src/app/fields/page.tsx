@@ -31,14 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useData, type FieldInput } from "@/lib/data";
 import { FIELD_SCOPES, FIELD_TYPES, TYPES_WITH_OPTIONS, keyFromLabel } from "@/lib/fields";
 import type { FieldDefinition, FieldScope, FieldType } from "@/lib/types";
@@ -172,97 +164,85 @@ export default function FieldsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Etiket</TableHead>
-                <TableHead>Anahtar</TableHead>
-                <TableHead>Kapsam</TableHead>
-                <TableHead>Tip</TableHead>
-                <TableHead>Seçenekler</TableHead>
-                <TableHead className="w-24">Zorunlu</TableHead>
-                <TableHead className="w-72 text-right">İşlemler</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {fields.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                    Henüz alan yok — ilkini aşağıdan ekleyin.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                fields.map((field, index) => (
-                  <TableRow key={field.id}>
-                    <TableCell className="text-muted-foreground">{index + 1}</TableCell>
-                    <TableCell>
+          {fields.length === 0 ? (
+            <p className="py-10 text-center text-muted-foreground">
+              Henüz alan yok — sağdan ilkini ekleyin.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {fields.map((field, index) => (
+                <Card key={field.id} className="gap-3 py-4">
+                  <CardHeader className="px-4">
+                    <div className="flex items-start justify-between gap-2">
                       <span className="flex items-center gap-2 font-medium">
+                        <span className="text-muted-foreground">{index + 1}.</span>
                         {field.label}
-                        {field.is_title_field && (
-                          <Badge variant="secondary" title="Siparişin görünen adı olarak kullanılır">
-                            <Star className="size-3" />
-                            Başlık
-                          </Badge>
-                        )}
                       </span>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {field.key}
-                    </TableCell>
-                    <TableCell>
+                      {field.is_title_field && (
+                        <Badge variant="secondary" title="Siparişin görünen adı olarak kullanılır">
+                          <Star className="size-3" />
+                          Başlık
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="font-mono text-xs">{field.key}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 text-sm">
+                    <Field label="Kapsam">
                       <Badge variant={field.scope === "item" ? "secondary" : "outline"}>
                         {field.scope === "item" ? "Kalem başına" : "Sipariş başına"}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {FIELD_TYPES.find((type) => type.value === field.type)?.label ?? field.type}
-                    </TableCell>
-                    <TableCell className="max-w-56 text-muted-foreground">
-                      <span className="line-clamp-1">{field.options.join(", ") || "—"}</span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {field.required ? "Evet" : "Hayır"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => moveField(field.id, "up")}
-                          disabled={index === 0}
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => moveField(field.id, "down")}
-                          disabled={index === fields.length - 1}
-                        >
-                          ↓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetTitle(field)}
-                          disabled={field.is_title_field || field.scope === "item"}
-                        >
-                          Başlık
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => startEditing(field)}>
-                          Düzenle
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleRemove(field)}>
-                          Sil
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    </Field>
+                    <Field label="Tip">
+                      <span className="text-muted-foreground">
+                        {FIELD_TYPES.find((type) => type.value === field.type)?.label ?? field.type}
+                      </span>
+                    </Field>
+                    <Field label="Zorunlu">
+                      <span className="text-muted-foreground">{field.required ? "Evet" : "Hayır"}</span>
+                    </Field>
+                    <Field label="Seçenekler">
+                      <span className="line-clamp-1 text-muted-foreground">
+                        {field.options.join(", ") || "—"}
+                      </span>
+                    </Field>
+                  </CardContent>
+                  <CardContent className="flex flex-wrap gap-2 px-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => moveField(field.id, "up")}
+                      disabled={index === 0}
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => moveField(field.id, "down")}
+                      disabled={index === fields.length - 1}
+                    >
+                      ↓
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSetTitle(field)}
+                      disabled={field.is_title_field || field.scope === "item"}
+                    >
+                      Başlık
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => startEditing(field)}>
+                      Düzenle
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleRemove(field)}>
+                      Sil
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -275,7 +255,7 @@ export default function FieldsPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAdd} className="grid gap-4">
-            <FieldForm form={form} setForm={setForm} />
+            <FieldForm form={form} setForm={setForm} singleColumn />
             <div>
               <Button type="submit">Alanı ekle</Button>
             </div>
@@ -320,15 +300,18 @@ export default function FieldsPage() {
 function FieldForm({
   form,
   setForm,
+  singleColumn = false,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  singleColumn?: boolean;
 }) {
   const needsOptions = TYPES_WITH_OPTIONS.includes(form.type);
+  const pairClassName = singleColumn ? "grid gap-4" : "grid gap-4 sm:grid-cols-2";
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={pairClassName}>
         <div className="grid gap-2">
           <Label htmlFor="field-label">Etiket</Label>
           <Input
@@ -361,7 +344,7 @@ function FieldForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={pairClassName}>
         <div className="grid gap-2">
           <Label htmlFor="field-type">Tip</Label>
           <Select
@@ -443,6 +426,15 @@ function FieldForm({
           Siparişin başlığı olarak kullan
         </label>
       </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-0.5">
+      <span className="text-xs tracking-wide text-muted-foreground uppercase">{label}</span>
+      {children}
     </div>
   );
 }
