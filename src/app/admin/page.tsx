@@ -10,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,16 +29,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useData } from "@/lib/data";
+import type { Company } from "@/lib/types";
 
 export default function AdminCompaniesPage() {
-  const { loaded, actingUser, companies, users, createCompany, renameCompany, setCompanyActive } =
-    useData();
+  const {
+    loaded,
+    actingUser,
+    companies,
+    users,
+    roles,
+    createCompany,
+    renameCompany,
+    setCompanyActive,
+    updateCompanyAdmin,
+  } = useData();
   const [name, setName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+
+  const [editingAdminFor, setEditingAdminFor] = useState<Company | null>(null);
+  const [adminEditName, setAdminEditName] = useState("");
+  const [adminEditEmail, setAdminEditEmail] = useState("");
+  const [adminEditPassword, setAdminEditPassword] = useState("");
+
+  function adminUserFor(company: Company) {
+    const role = roles.find((r) => r.company_id === company.id && r.is_protected);
+    return users.find((u) => u.company_id === company.id && u.role_id === role?.id);
+  }
 
   if (loaded && !actingUser?.is_platform_admin) {
     return (
@@ -75,6 +103,37 @@ export default function AdminCompaniesPage() {
     setEditingName("");
   }
 
+  function openAdminEdit(company: Company) {
+    const admin = adminUserFor(company);
+    if (!admin) {
+      toast.error("Bu şirket için yönetici bulunamadı.");
+      return;
+    }
+    setEditingAdminFor(company);
+    setAdminEditName(admin.name);
+    setAdminEditEmail(admin.email);
+    setAdminEditPassword("");
+  }
+
+  async function handleSaveAdminEdit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editingAdminFor) return;
+    const admin = adminUserFor(editingAdminFor);
+    if (!admin) return;
+
+    const result = await updateCompanyAdmin(admin.id, {
+      name: adminEditName,
+      email: adminEditEmail,
+      password: adminEditPassword || undefined,
+    });
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Yönetici bilgileri güncellendi.");
+    setEditingAdminFor(null);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -98,7 +157,7 @@ export default function AdminCompaniesPage() {
                   <TableHead>Ad</TableHead>
                   <TableHead>Kullanıcı</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead className="w-56 text-right">İşlemler</TableHead>
+                  <TableHead className="w-80 text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,6 +225,9 @@ export default function AdminCompaniesPage() {
                               >
                                 {company.is_active ? "Pasif yap" : "Aktif yap"}
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => openAdminEdit(company)}>
+                                Yönetici
+                              </Button>
                             </>
                           )}
                         </div>
@@ -230,6 +292,62 @@ export default function AdminCompaniesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog
+        open={editingAdminFor !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingAdminFor(null);
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleSaveAdminEdit}>
+            <DialogHeader>
+              <DialogTitle>{editingAdminFor?.name} — Yönetici</DialogTitle>
+              <DialogDescription>
+                Şifreyi boş bırakmak mevcut şifreyi korur.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-6">
+              <div className="grid gap-2">
+                <Label htmlFor="admin-edit-name">Yönetici adı</Label>
+                <Input
+                  id="admin-edit-name"
+                  value={adminEditName}
+                  onChange={(event) => setAdminEditName(event.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="admin-edit-email">Yönetici e-postası</Label>
+                <Input
+                  id="admin-edit-email"
+                  type="email"
+                  value={adminEditEmail}
+                  onChange={(event) => setAdminEditEmail(event.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="admin-edit-password">Yeni şifre</Label>
+                <Input
+                  id="admin-edit-password"
+                  type="password"
+                  value={adminEditPassword}
+                  onChange={(event) => setAdminEditPassword(event.target.value)}
+                  placeholder="Değiştirmemek için boş bırakın"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingAdminFor(null)}>
+                Vazgeç
+              </Button>
+              <Button type="submit">Kaydet</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

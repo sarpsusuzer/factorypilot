@@ -532,9 +532,12 @@ export async function addRole(input: RoleInput): Promise<Result> {
   if (snapshot.roles.some((role) => role.name.toLowerCase() === name.toLowerCase()))
     return { ok: false, error: "Bu rol adı zaten var." };
 
+  const companyId = actingCompanyId();
+  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+
   return persistRoles([
     ...snapshot.roles,
-    { id: newId(), name, permissions: [...new Set(input.permissions)] },
+    { id: newId(), name, permissions: [...new Set(input.permissions)], company_id: companyId },
   ]);
 }
 
@@ -734,6 +737,43 @@ export async function createCompany(input: CompanyInput): Promise<Result> {
   return { ok: true };
 }
 
+export type UpdateCompanyAdminInput = {
+  name: string;
+  email: string;
+  password?: string;
+};
+
+/** Renames/re-emails/resets the password for any user — platform admin only. */
+export async function updateCompanyAdmin(
+  userId: string,
+  input: UpdateCompanyAdminInput,
+): Promise<Result> {
+  const name = input.name.trim();
+  const email = input.email.trim();
+  if (!name) return { ok: false, error: "Ad zorunludur." };
+  if (!email) return { ok: false, error: "E-posta zorunludur." };
+
+  const { data, error } = await supabase.functions.invoke("platform-admin", {
+    body: {
+      action: "update_user",
+      user_id: userId,
+      name,
+      email,
+      ...(input.password ? { password: input.password } : {}),
+    },
+  });
+  if (error) {
+    const message = (error as { context?: { error?: string } })?.context?.error ?? error.message;
+    return { ok: false, error: message };
+  }
+  if (data?.error) return { ok: false, error: data.error };
+
+  update({
+    users: snapshot.users.map((u) => (u.id === userId ? { ...u, name, email } : u)),
+  });
+  return { ok: true };
+}
+
 export async function renameCompany(companyId: string, name: string): Promise<Result> {
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, error: "Şirket adı zorunludur." };
@@ -846,6 +886,7 @@ export function useData() {
     logout,
     createCompany,
     renameCompany,
+    updateCompanyAdmin,
     setCompanyActive,
     setUserActive,
     uploadCompanyLogo,

@@ -110,6 +110,7 @@ export type Role = {
   // True only for the seeded Admin role — it can't be deleted or lose
   // manage_roles, so there's always a way back into role management.
   is_protected?: boolean;
+  company_id: string;
 };
 
 export type User = {

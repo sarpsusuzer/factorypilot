@@ -55,6 +55,33 @@ Deno.serve(async (req) => {
     return json({ error: "Geçersiz istek." }, 400);
   }
 
+  if (body.action === "update_user") {
+    const userId = String(body.user_id ?? "");
+    const name = body.name === undefined ? undefined : String(body.name).trim();
+    const email = body.email === undefined ? undefined : String(body.email).trim();
+    const password = body.password ? String(body.password) : undefined;
+    if (!userId) return json({ error: "Kullanıcı bulunamadı." }, 400);
+    if (name === "" || email === "") return json({ error: "Ad ve e-posta boş olamaz." }, 400);
+
+    if (email !== undefined || password !== undefined) {
+      const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+        ...(email !== undefined ? { email } : {}),
+        ...(password !== undefined ? { password } : {}),
+      });
+      if (authError) return json({ error: authError.message }, 400);
+    }
+
+    if (name !== undefined || email !== undefined) {
+      const { error: profileError } = await admin
+        .from("profiles")
+        .update({ ...(name !== undefined ? { name } : {}), ...(email !== undefined ? { email } : {}) })
+        .eq("id", userId);
+      if (profileError) return json({ error: profileError.message }, 400);
+    }
+
+    return json({ ok: true });
+  }
+
   if (body.action !== "create_company") {
     return json({ error: "Bilinmeyen işlem." }, 400);
   }
