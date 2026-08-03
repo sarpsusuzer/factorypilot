@@ -24,6 +24,7 @@ export type FieldDefinition = {
   scope: FieldScope;
   is_title_field: boolean; // exactly one at a time; used as the order's display name
   position: number;
+  company_id: string;
 };
 
 /**
@@ -54,6 +55,7 @@ export type Order = {
   created_by: string;
   field_values: Record<string, FieldValue>; // order-level fields
   items: OrderItem[]; // one entry per line item
+  company_id: string;
 };
 
 /** A preset swatch key — see stage-colors.ts for the actual classes. */
@@ -75,6 +77,7 @@ export type Stage = {
   name: string;
   position: number; // display order only — orders can move to any stage
   color: StageColor;
+  company_id: string;
 };
 
 export type StageHistoryEntry = {
@@ -84,6 +87,7 @@ export type StageHistoryEntry = {
   to_stage: string;
   changed_by: string;
   changed_at: string; // ISO timestamp
+  company_id: string;
 };
 
 export type Settings = {

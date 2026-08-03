@@ -181,6 +181,9 @@ export async function createOrder(input: {
   const userId = snapshot.session?.user.id;
   if (!userId) return { ok: false, error: "Önce giriş yapın." };
 
+  const companyId = actingCompanyId();
+  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+
   const perOrder = orderFields(snapshot.fields);
   const perItem = itemFields(snapshot.fields);
 
@@ -198,6 +201,7 @@ export async function createOrder(input: {
             id: newId(),
             field_values: pickValues(perItem, item.field_values),
           })),
+    company_id: companyId,
   };
 
   const { data: inserted, error } = await supabase.from("orders").insert(order).select().single();
@@ -210,6 +214,7 @@ export async function createOrder(input: {
     to_stage: firstStage.name,
     changed_by: userId,
     changed_at: inserted.created_at,
+    company_id: companyId,
   };
   const { error: historyError } = await supabase.from("stage_history").insert(historyEntry);
   if (historyError) return { ok: false, error: historyError.message };
@@ -251,6 +256,7 @@ export async function moveOrderToStage(orderId: string, toStage: string): Promis
     to_stage: toStage,
     changed_by: userId,
     changed_at: new Date().toISOString(),
+    company_id: order.company_id,
   };
   const { error: historyError } = await supabase.from("stage_history").insert(historyEntry);
   if (historyError) return { ok: false, error: historyError.message };
@@ -336,11 +342,15 @@ export async function addField(input: FieldInput): Promise<Result> {
   const problem = validateFieldInput(input);
   if (!problem.ok) return problem;
 
+  const companyId = actingCompanyId();
+  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+
   const field: FieldDefinition = {
     id: newId(),
     ...normalise(input),
     is_title_field: false,
     position: snapshot.fields.length,
+    company_id: companyId,
   };
 
   const fields = [...snapshot.fields, field];
@@ -431,6 +441,9 @@ export async function addStage(name: string): Promise<Result> {
   if (snapshot.stages.some((stage) => stage.name.toLowerCase() === trimmed.toLowerCase()))
     return { ok: false, error: "Bu aşama zaten var." };
 
+  const companyId = actingCompanyId();
+  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+
   return persistStages([
     ...snapshot.stages,
     {
@@ -438,6 +451,7 @@ export async function addStage(name: string): Promise<Result> {
       name: trimmed,
       position: snapshot.stages.length,
       color: colorForPosition(snapshot.stages.length),
+      company_id: companyId,
     },
   ]);
 }
