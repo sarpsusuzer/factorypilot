@@ -25,16 +25,20 @@ export function OrdersKanban({
   extraColumns: FieldDefinition[];
   hasItems: boolean;
 }) {
-  const { fields, stages, history, settings, can, moveOrderToStage } = useData();
+  const { fields, stages, companies, company, history, settings, can, moveOrderToStage } = useData();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<string | null>(null);
   const canMove = can("move_stage");
+  const fieldsForOrder = (order: Order) => fields.filter((field) => field.company_id === order.company_id);
+  // A müşteri only ever moves their own company's orders — never one they're
+  // just viewing as the customer of a matched üretici.
+  const canMoveOrder = (order: Order) => canMove && order.company_id === company?.id;
 
   async function handleDrop(stageName: string) {
     setOverStage(null);
     const order = orders.find((o) => o.id === draggingId);
     setDraggingId(null);
-    if (!order || order.current_stage === stageName || !canMove) return;
+    if (!order || order.current_stage === stageName || !canMoveOrder(order)) return;
 
     const result = await moveOrderToStage(order.id, stageName);
     if (!result.ok) {
@@ -46,7 +50,7 @@ export function OrdersKanban({
 
   return (
     <div className="space-y-4">
-      {canMove && (
+      {canMove && company?.company_type !== "musteri" && (
         <p className="text-xs text-muted-foreground">
           Bir kartı sürükleyip başka bir sütuna bırakarak siparişi taşıyın.
         </p>
@@ -89,18 +93,22 @@ export function OrdersKanban({
                 ) : (
                   stageOrders.map((order) => {
                     const overdue = isOverdue(order, history, settings.overdue_threshold_days);
+                    const cardCanMove = canMoveOrder(order);
+                    const customerName = order.customer_company_id
+                      ? companies.find((c) => c.id === order.customer_company_id)?.name
+                      : undefined;
 
                     return (
                       <div
                         key={order.id}
-                        draggable={canMove}
-                        onDragStart={() => canMove && setDraggingId(order.id)}
+                        draggable={cardCanMove}
+                        onDragStart={() => cardCanMove && setDraggingId(order.id)}
                         onDragEnd={() => {
                           setDraggingId(null);
                           setOverStage(null);
                         }}
                         className={`space-y-1.5 rounded-md border bg-background p-2.5 shadow-sm transition-opacity ${
-                          canMove ? "cursor-grab active:cursor-grabbing" : ""
+                          cardCanMove ? "cursor-grab active:cursor-grabbing" : ""
                         } ${draggingId === order.id ? "opacity-40" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -120,7 +128,14 @@ export function OrdersKanban({
                             </Link>
                           </Button>
                         </div>
-                        <p className="line-clamp-1 text-sm font-medium">{orderTitle(order, fields)}</p>
+                        <p className="line-clamp-1 text-sm font-medium">
+                          {orderTitle(order, fieldsForOrder(order))}
+                        </p>
+                        {customerName && (
+                          <p className="line-clamp-1 text-xs text-muted-foreground">
+                            Müşteri: {customerName}
+                          </p>
+                        )}
                         {extraColumns.map((field) => {
                           const value =
                             field.scope === "item"

@@ -40,6 +40,7 @@ import {
   timeInCurrentStage,
   withinLastDays,
 } from "@/lib/reporting";
+import type { Order } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ALL = "__all__";
@@ -47,7 +48,7 @@ type SortKey = "order_no" | "created_at" | "title";
 type View = "table" | "kanban";
 
 export default function OrdersPage() {
-  const { loaded, orders, stages, fields, history, settings, can } = useData();
+  const { loaded, orders, stages, fields, companies, company, history, settings, can } = useData();
   const [view, setView] = useState<View>("table");
   const [stageTab, setStageTab] = useState<string>(ALL);
   const [clientFilter, setClientFilter] = useState<string>(ALL);
@@ -57,16 +58,24 @@ export default function OrdersPage() {
   const [sortAsc, setSortAsc] = useState(false);
 
   const lastStage = stages[stages.length - 1]?.name;
-  const nameField = titleField(fields);
+  // A müşteri's own field list is empty — their orders each belong to
+  // whichever üretici they picked, so header columns fall back to the
+  // acting company's own schema if any, else the first schema in view.
+  const ownFields = fields.filter((field) => field.company_id === company?.id);
+  const headerFields = ownFields.length > 0 ? ownFields : fields;
+  const nameField = titleField(headerFields);
   // After the title, show the next two configured fields as their own columns.
-  const extraColumns = fields.filter((field) => field.id !== nameField?.id).slice(0, 2);
-  const hasItems = itemFields(fields).length > 0;
+  const extraColumns = headerFields.filter((field) => field.id !== nameField?.id).slice(0, 2);
+  const hasItems = itemFields(headerFields).length > 0;
+  const showCustomerColumn = orders.some((order) => order.customer_company_id);
+  const fieldsForOrder = (order: Order) => fields.filter((field) => field.company_id === order.company_id);
 
   const titles = useMemo(
     () =>
-      [...new Set(orders.map((order) => orderTitle(order, fields)))].sort((a, b) =>
+      [...new Set(orders.map((order) => orderTitle(order, fieldsForOrder(order))))].sort((a, b) =>
         a.localeCompare(b, "tr"),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fields, orders],
   );
 
@@ -80,7 +89,7 @@ export default function OrdersPage() {
     const term = search.trim().toLowerCase();
 
     return orders.filter((order) => {
-      const matchesClient = clientFilter === ALL || orderTitle(order, fields) === clientFilter;
+      const matchesClient = clientFilter === ALL || orderTitle(order, fieldsForOrder(order)) === clientFilter;
       const matchesDate =
         dateFilter === ALL || withinLastDays(order.created_at, Number(dateFilter));
       const matchesSearch =
@@ -89,6 +98,7 @@ export default function OrdersPage() {
         searchableText(order).includes(term);
       return matchesClient && matchesDate && matchesSearch;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientFilter, dateFilter, fields, orders, search]);
 
   const visibleOrders = useMemo(() => {
@@ -101,10 +111,11 @@ export default function OrdersPage() {
       if (sortKey === "created_at") {
         return (Date.parse(a.created_at) - Date.parse(b.created_at)) * direction;
       }
-      const left = sortKey === "order_no" ? a.order_no : orderTitle(a, fields);
-      const right = sortKey === "order_no" ? b.order_no : orderTitle(b, fields);
+      const left = sortKey === "order_no" ? a.order_no : orderTitle(a, fieldsForOrder(a));
+      const right = sortKey === "order_no" ? b.order_no : orderTitle(b, fieldsForOrder(b));
       return left.localeCompare(right, "tr", { numeric: true }) * direction;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fields, matchingOrders, sortAsc, sortKey, stageTab]);
 
   function toggleSort(key: SortKey) {
@@ -252,6 +263,7 @@ export default function OrdersPage() {
                   {field.label}
                 </TableHead>
               ))}
+              {showCustomerColumn && <TableHead className="uppercase">Müşteri</TableHead>}
               {hasItems && <TableHead className="uppercase">Kalem</TableHead>}
               <TableHead className="uppercase">Aşamada</TableHead>
               <TableHead className="uppercase">Durum</TableHead>
@@ -261,13 +273,13 @@ export default function OrdersPage() {
           <TableBody>
             {!loaded ? (
               <TableRow>
-                <TableCell colSpan={5 + extraColumns.length + (hasItems ? 1 : 0)} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={5 + extraColumns.length + (hasItems ? 1 : 0) + (showCustomerColumn ? 1 : 0)} className="py-12 text-center text-muted-foreground">
                   Yükleniyor…
                 </TableCell>
               </TableRow>
             ) : visibleOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5 + extraColumns.length + (hasItems ? 1 : 0)} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={5 + extraColumns.length + (hasItems ? 1 : 0) + (showCustomerColumn ? 1 : 0)} className="py-12 text-center text-muted-foreground">
                   {orders.length === 0
                     ? "Henüz sipariş yok — ilk siparişi oluşturun."
                     : "Bu filtrelere uyan sipariş yok."}
@@ -276,6 +288,10 @@ export default function OrdersPage() {
             ) : (
               visibleOrders.map((order) => {
                 const overdue = isOverdue(order, history, settings.overdue_threshold_days);
+                const orderScopedFields = fieldsForOrder(order);
+                const customerName = order.customer_company_id
+                  ? (companies.find((c) => c.id === order.customer_company_id)?.name ?? "—")
+                  : "—";
 
                 return (
                   <TableRow key={order.id}>
@@ -293,7 +309,7 @@ export default function OrdersPage() {
                     <TableCell className="whitespace-nowrap text-muted-foreground">
                       {formatDateTime(order.created_at)}
                     </TableCell>
-                    <TableCell className="font-medium">{orderTitle(order, fields)}</TableCell>
+                    <TableCell className="font-medium">{orderTitle(order, orderScopedFields)}</TableCell>
                     {extraColumns.map((field) => (
                       <TableCell key={field.id} className="max-w-64">
                         <span className="line-clamp-1 text-muted-foreground">
@@ -304,6 +320,9 @@ export default function OrdersPage() {
                         </span>
                       </TableCell>
                     ))}
+                    {showCustomerColumn && (
+                      <TableCell className="text-muted-foreground">{customerName}</TableCell>
+                    )}
                     {hasItems && (
                       <TableCell className="text-muted-foreground">
                         {order.items?.length ?? 0}

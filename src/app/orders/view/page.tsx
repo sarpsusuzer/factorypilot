@@ -68,6 +68,8 @@ function OrderDetail() {
     loaded,
     stages,
     fields,
+    companies,
+    company,
     history,
     settings,
     users,
@@ -97,9 +99,21 @@ function OrderDetail() {
     );
   }
 
-  const title = orderTitle(order, fields);
-  const perOrder = orderFields(fields);
-  const perItem = itemFields(fields);
+  // A müşteri's own field/stage list is empty — orders they submitted belong
+  // to whichever üretici they picked, so always look fields/stages up by the
+  // order's own company_id rather than assuming it matches the viewer's.
+  const orderFieldsList = fields.filter((field) => field.company_id === order.company_id);
+  const orderStages = stages
+    .filter((stage) => stage.company_id === order.company_id)
+    .sort((a, b) => a.position - b.position);
+  const customerCompany = order.customer_company_id
+    ? companies.find((c) => c.id === order.customer_company_id)
+    : undefined;
+  const canMoveStage = can("move_stage") && order.company_id === company?.id;
+
+  const title = orderTitle(order, orderFieldsList);
+  const perOrder = orderFields(orderFieldsList);
+  const perItem = itemFields(orderFieldsList);
   const items = order.items ?? [];
   const entries = historyForOrder(order.id);
   // Values kept from a previous field configuration, so nothing silently vanishes.
@@ -202,6 +216,12 @@ function OrderDetail() {
               <Field label="Oluşturulma">{formatDateTime(order.created_at)}</Field>
               <Separator />
               <Field label="Oluşturan">{order.created_by ? userName(users, order.created_by) : "—"}</Field>
+              {customerCompany && (
+                <>
+                  <Separator />
+                  <Field label="Müşteri">{customerCompany.name}</Field>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -272,7 +292,7 @@ function OrderDetail() {
             </Card>
           )}
 
-          {can("move_stage") && (
+          {canMoveStage && (
             <Card>
               <CardHeader>
                 <CardTitle>Aşama değiştir</CardTitle>
@@ -288,7 +308,7 @@ function OrderDetail() {
                       <SelectValue placeholder="Bir aşama seçin" />
                     </SelectTrigger>
                     <SelectContent>
-                      {stages.map((stage) => (
+                      {orderStages.map((stage) => (
                         <SelectItem
                           key={stage.id}
                           value={stage.name}

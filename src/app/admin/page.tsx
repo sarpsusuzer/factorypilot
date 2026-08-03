@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -50,11 +51,14 @@ export default function AdminCompaniesPage() {
     companies,
     users,
     roles,
+    companyMatches,
     createCompany,
     renameCompany,
     setCompanyActive,
     setCompanyType,
     updateCompanyAdmin,
+    addCompanyMatch,
+    removeCompanyMatch,
   } = useData();
   const [name, setName] = useState("");
   const [companyType, setNewCompanyType] = useState<CompanyType>("uretici");
@@ -68,6 +72,9 @@ export default function AdminCompaniesPage() {
   const [adminEditName, setAdminEditName] = useState("");
   const [adminEditEmail, setAdminEditEmail] = useState("");
   const [adminEditPassword, setAdminEditPassword] = useState("");
+
+  const [editingMatchesFor, setEditingMatchesFor] = useState<Company | null>(null);
+  const ureticiCompanies = companies.filter((c) => c.company_type === "uretici");
 
   function adminUserFor(company: Company) {
     const role = roles.find((r) => r.company_id === company.id && r.is_protected);
@@ -111,6 +118,16 @@ export default function AdminCompaniesPage() {
 
   async function handleTypeChange(companyId: string, type: CompanyType) {
     const result = await setCompanyType(companyId, type);
+    if (!result.ok) toast.error(result.error);
+  }
+
+  async function handleToggleMatch(musteriCompanyId: string, ureticiCompanyId: string) {
+    const existing = companyMatches.find(
+      (m) => m.musteri_company_id === musteriCompanyId && m.uretici_company_id === ureticiCompanyId,
+    );
+    const result = existing
+      ? await removeCompanyMatch(existing.id)
+      : await addCompanyMatch(musteriCompanyId, ureticiCompanyId);
     if (!result.ok) toast.error(result.error);
   }
 
@@ -267,6 +284,15 @@ export default function AdminCompaniesPage() {
                               <Button size="sm" variant="outline" onClick={() => openAdminEdit(company)}>
                                 Yönetici
                               </Button>
+                              {company.company_type === "musteri" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingMatchesFor(company)}
+                                >
+                                  Eşleştir
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
@@ -400,6 +426,52 @@ export default function AdminCompaniesPage() {
               <Button type="submit">Kaydet</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editingMatchesFor !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingMatchesFor(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingMatchesFor?.name} — Eşleştirilmiş üreticiler</DialogTitle>
+            <DialogDescription>
+              Seçilen üreticiler için bu müşteri sipariş oluşturabilir; sipariş yalnızca o üretici
+              tarafından görülür.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            {ureticiCompanies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Henüz bir üretici şirket yok.</p>
+            ) : (
+              ureticiCompanies.map((uretici) => {
+                const checked = companyMatches.some(
+                  (m) =>
+                    m.musteri_company_id === editingMatchesFor?.id &&
+                    m.uretici_company_id === uretici.id,
+                );
+                return (
+                  <label key={uretici.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() =>
+                        editingMatchesFor && handleToggleMatch(editingMatchesFor.id, uretici.id)
+                      }
+                    />
+                    {uretici.name}
+                  </label>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setEditingMatchesFor(null)}>
+              Kapat
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

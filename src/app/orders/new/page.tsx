@@ -14,6 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useData } from "@/lib/data";
 import { blankValues, itemFields, orderFields, validateValues } from "@/lib/fields";
 import { newId } from "@/lib/storage";
@@ -26,11 +34,36 @@ type ItemDraft = {
 
 export default function NewOrderPage() {
   const router = useRouter();
-  const { loaded, fields, stages, actingUser, can, createOrder } = useData();
+  const {
+    loaded,
+    fields,
+    stages,
+    companies,
+    companyMatches,
+    company,
+    actingUser,
+    can,
+    createOrder,
+  } = useData();
 
-  const perOrder = orderFields(fields);
-  const perItem = itemFields(fields);
-  const firstStage = stages[0]?.name;
+  const isMusteri = company?.company_type === "musteri";
+  const matchedUreticiler = companies.filter((c) =>
+    companyMatches.some((m) => m.musteri_company_id === company?.id && m.uretici_company_id === c.id),
+  );
+
+  const [ureticiId, setUreticiId] = useState<string>("");
+  const activeUreticiId = isMusteri ? ureticiId : company?.id;
+
+  // For an üretici this is just their own schema; for a müşteri it's the
+  // schema belonging to whichever üretici they picked above.
+  const effectiveFields = fields.filter((field) => field.company_id === activeUreticiId);
+  const effectiveStages = stages
+    .filter((stage) => stage.company_id === activeUreticiId)
+    .sort((a, b) => a.position - b.position);
+
+  const perOrder = orderFields(effectiveFields);
+  const perItem = itemFields(effectiveFields);
+  const firstStage = effectiveStages[0]?.name;
 
   const [orderValues, setOrderValues] = useState<Record<string, FieldValue>>({});
   const [items, setItems] = useState<ItemDraft[]>([]);
@@ -67,8 +100,22 @@ export default function NewOrderPage() {
     setItems(drafts.filter((item) => item.id !== itemId));
   }
 
+  function handleUreticiChange(id: string) {
+    setUreticiId(id);
+    // Field keys differ between üretici, so stale values/errors don't carry over.
+    setOrderValues({});
+    setOrderErrors({});
+    setItems([]);
+    setItemErrors({});
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isMusteri && !ureticiId) {
+      toast.error("Sipariş oluşturmak için bir üretici seçin.");
+      return;
+    }
 
     const foundOrder = validateValues(perOrder, orderValues);
     const foundItems: Record<string, Record<string, string>> = {};
@@ -85,10 +132,13 @@ export default function NewOrderPage() {
       return;
     }
 
-    const result = await createOrder({
-      field_values: orderValues,
-      items: drafts.map((item) => ({ field_values: item.values })),
-    });
+    const result = await createOrder(
+      {
+        field_values: orderValues,
+        items: drafts.map((item) => ({ field_values: item.values })),
+      },
+      isMusteri ? ureticiId : undefined,
+    );
 
     if (!result.ok) {
       toast.error(result.error);
@@ -111,7 +161,22 @@ export default function NewOrderPage() {
     );
   }
 
-  if (loaded && fields.length === 0) {
+  if (loaded && isMusteri && matchedUreticiler.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
+        <p className="text-muted-foreground">
+          Henüz eşleştirilmiş bir üretici yok — sipariş oluşturmak için platform yöneticisinin
+          şirketinizi bir üreticiyle eşleştirmesi gerekir.
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/">Siparişlere dön</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (loaded && !isMusteri && fields.length === 0) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
@@ -150,6 +215,30 @@ export default function NewOrderPage() {
       </div>
 
       <div className="space-y-6">
+        {isMusteri && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Üretici</CardTitle>
+              <CardDescription>Bu sipariş hangi üretici için oluşturuluyor?</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-2 sm:max-w-sm">
+              <Label htmlFor="uretici-select">Üretici</Label>
+              <Select value={ureticiId} onValueChange={handleUreticiChange}>
+                <SelectTrigger id="uretici-select" className="w-full">
+                  <SelectValue placeholder="Bir üretici seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {matchedUreticiler.map((uretici) => (
+                    <SelectItem key={uretici.id} value={uretici.id}>
+                      {uretici.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
+
         {perOrder.length > 0 && (
           <Card>
             <CardHeader>
@@ -241,13 +330,15 @@ export default function NewOrderPage() {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Bu siparişte kalem yok. Bir siparişe birden fazla kalem koymak için{" "}
-            <Link href="/fields" className="underline">
-              Sipariş alanları
-            </Link>{" "}
-            ekranından bir alanın kapsamını <span className="font-medium">Kalem</span> yapın.
-          </p>
+          !isMusteri && (
+            <p className="text-sm text-muted-foreground">
+              Bu siparişte kalem yok. Bir siparişe birden fazla kalem koymak için{" "}
+              <Link href="/fields" className="underline">
+                Sipariş alanları
+              </Link>{" "}
+              ekranından bir alanın kapsamını <span className="font-medium">Kalem</span> yapın.
+            </p>
+          )
         )}
       </div>
     </form>

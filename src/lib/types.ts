@@ -55,7 +55,11 @@ export type Order = {
   created_by: string;
   field_values: Record<string, FieldValue>; // order-level fields
   items: OrderItem[]; // one entry per line item
+  // The üretici whose stages/fields govern this order — the acting company
+  // for a self-created order, or the matched üretici for a müşteri's.
   company_id: string;
+  // Set only when a müşteri created this order on a matched üretici's behalf.
+  customer_company_id: string | null;
 };
 
 /** A preset swatch key — see stage-colors.ts for the actual classes. */
@@ -137,4 +141,12 @@ export type Company = {
   is_active: boolean;
   created_at: string;
   company_type: CompanyType;
+};
+
+/** A müşteri company matched to an üretici — see orders.customer_company_id. */
+export type CompanyMatch = {
+  id: string;
+  musteri_company_id: string;
+  uretici_company_id: string;
+  created_at: string;
 };

@@ -18,6 +18,7 @@ import { colorForPosition } from "./stage-colors";
 import { newId, nextOrderNo } from "./storage";
 import type {
   Company,
+  CompanyMatch,
   CompanyType,
   FieldDefinition,
   FieldScope,
@@ -47,6 +48,9 @@ type Snapshot = {
   // RLS scopes this to just the acting user's own company row — except for a
   // platform admin, who has no company and sees every row here instead.
   companies: Company[];
+  // A müşteri's own matches (which üretici they can order against), or every
+  // match for a platform admin managing them.
+  companyMatches: CompanyMatch[];
   settings: Settings;
 };
 
@@ -62,6 +66,7 @@ const EMPTY: Snapshot = {
   roles: [],
   users: [],
   companies: [],
+  companyMatches: [],
   settings: DEFAULT_SETTINGS,
 };
 
@@ -108,17 +113,27 @@ async function bootstrap() {
  * comes back empty until they log in, same as the tables just being gated.
  */
 async function refetchAll(session: Session | null) {
-  const [rolesRes, usersRes, companiesRes, stagesRes, fieldsRes, ordersRes, historyRes, settingsRes] =
-    await Promise.all([
-      supabase.from("roles").select("*"),
-      supabase.from("profiles").select("*"),
-      supabase.from("companies").select("*"),
-      supabase.from("stages").select("*").order("position"),
-      supabase.from("field_definitions").select("*").order("position"),
-      supabase.from("orders").select("*").order("created_at", { ascending: false }),
-      supabase.from("stage_history").select("*"),
-      supabase.from("settings").select("*").single(),
-    ]);
+  const [
+    rolesRes,
+    usersRes,
+    companiesRes,
+    matchesRes,
+    stagesRes,
+    fieldsRes,
+    ordersRes,
+    historyRes,
+    settingsRes,
+  ] = await Promise.all([
+    supabase.from("roles").select("*"),
+    supabase.from("profiles").select("*"),
+    supabase.from("companies").select("*"),
+    supabase.from("company_matches").select("*"),
+    supabase.from("stages").select("*").order("position"),
+    supabase.from("field_definitions").select("*").order("position"),
+    supabase.from("orders").select("*").order("created_at", { ascending: false }),
+    supabase.from("stage_history").select("*"),
+    supabase.from("settings").select("*").single(),
+  ]);
 
   update({
     loaded: true,
@@ -126,6 +141,7 @@ async function refetchAll(session: Session | null) {
     roles: rolesRes.data ?? [],
     users: usersRes.data ?? [],
     companies: companiesRes.data ?? [],
+    companyMatches: matchesRes.data ?? [],
     stages: stagesRes.data ?? [],
     fields: fieldsRes.data ?? [],
     orders: ordersRes.data ?? [],
@@ -172,25 +188,36 @@ export async function logout() {
 
 // --- Orders ----------------------------------------------------------------
 
-export async function createOrder(input: {
-  field_values: Record<string, FieldValue>;
-  items: { field_values: Record<string, FieldValue> }[];
-}): Promise<Result> {
-  const firstStage = snapshot.stages[0];
-  if (!firstStage) return { ok: false, error: "Sipariş oluşturmadan önce en az bir aşama ekleyin." };
-
+export async function createOrder(
+  input: {
+    field_values: Record<string, FieldValue>;
+    items: { field_values: Record<string, FieldValue> }[];
+  },
+  // Set when a müşteri is creating this order against a matched üretici —
+  // the order (and its fields/stages) belong to THAT company, not the
+  // acting one, which is instead recorded as the customer.
+  ureticiCompanyId?: string,
+): Promise<Result> {
   const userId = snapshot.session?.user.id;
   if (!userId) return { ok: false, error: "Önce giriş yapın." };
 
-  const companyId = actingCompanyId();
-  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+  const ownCompanyId = actingCompanyId();
+  if (!ownCompanyId) return { ok: false, error: "Şirket bulunamadı." };
 
-  const perOrder = orderFields(snapshot.fields);
-  const perItem = itemFields(snapshot.fields);
+  const targetCompanyId = ureticiCompanyId ?? ownCompanyId;
+  const targetStages = snapshot.stages.filter((stage) => stage.company_id === targetCompanyId);
+  const targetFields = snapshot.fields.filter((field) => field.company_id === targetCompanyId);
+  const targetOrders = snapshot.orders.filter((order) => order.company_id === targetCompanyId);
+
+  const firstStage = targetStages[0];
+  if (!firstStage) return { ok: false, error: "Sipariş oluşturmadan önce en az bir aşama ekleyin." };
+
+  const perOrder = orderFields(targetFields);
+  const perItem = itemFields(targetFields);
 
   const order = {
     id: newId(),
-    order_no: nextOrderNo(snapshot.orders),
+    order_no: nextOrderNo(targetOrders),
     current_stage: firstStage.name,
     created_at: new Date().toISOString(),
     created_by: userId,
@@ -202,7 +229,8 @@ export async function createOrder(input: {
             id: newId(),
             field_values: pickValues(perItem, item.field_values),
           })),
-    company_id: companyId,
+    company_id: targetCompanyId,
+    customer_company_id: ureticiCompanyId ? ownCompanyId : null,
   };
 
   const { data: inserted, error } = await supabase.from("orders").insert(order).select().single();
@@ -215,7 +243,7 @@ export async function createOrder(input: {
     to_stage: firstStage.name,
     changed_by: userId,
     changed_at: inserted.created_at,
-    company_id: companyId,
+    company_id: targetCompanyId,
   };
   const { error: historyError } = await supabase.from("stage_history").insert(historyEntry);
   if (historyError) return { ok: false, error: historyError.message };
@@ -880,6 +908,27 @@ export async function uploadCompanyLogo(companyId: string, file: File): Promise<
   return { ok: true };
 }
 
+/** Links a müşteri to an üretici so the müşteri can order against their schema. Platform admin only. */
+export async function addCompanyMatch(musteriCompanyId: string, ureticiCompanyId: string): Promise<Result> {
+  const { data, error } = await supabase
+    .from("company_matches")
+    .insert({ musteri_company_id: musteriCompanyId, uretici_company_id: ureticiCompanyId })
+    .select()
+    .single();
+  if (error) return { ok: false, error: error.message };
+
+  update({ companyMatches: [...snapshot.companyMatches, data] });
+  return { ok: true };
+}
+
+export async function removeCompanyMatch(matchId: string): Promise<Result> {
+  const { error } = await supabase.from("company_matches").delete().eq("id", matchId);
+  if (error) return { ok: false, error: error.message };
+
+  update({ companyMatches: snapshot.companyMatches.filter((m) => m.id !== matchId) });
+  return { ok: true };
+}
+
 // --- Hook ------------------------------------------------------------------
 
 export function useData() {
@@ -933,6 +982,8 @@ export function useData() {
     setCompanyType,
     setUserActive,
     uploadCompanyLogo,
+    addCompanyMatch,
+    removeCompanyMatch,
     actingUser,
     actingRole,
     company,
