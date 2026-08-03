@@ -29,8 +29,8 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "Yetkisiz." }, 401);
 
-  // Scoped to the caller's own JWT, so has_permission() checks the caller,
-  // not this function's elevated privileges.
+  // Scoped to the caller's own JWT, so has_permission() and the company
+  // lookup below both reflect the caller, not this function's own privileges.
   const asCaller = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -38,6 +38,17 @@ Deno.serve(async (req) => {
     perm: "manage_roles",
   });
   if (permError || !allowed) return json({ error: "Bu işlem için yetkiniz yok." }, 403);
+
+  const {
+    data: { user: caller },
+  } = await asCaller.auth.getUser();
+  const { data: callerProfile } = await asCaller
+    .from("profiles")
+    .select("company_id")
+    .eq("id", caller!.id)
+    .single();
+  const companyId = callerProfile?.company_id;
+  if (!companyId) return json({ error: "Şirket bulunamadı." }, 400);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   let body: Record<string, unknown>;
@@ -47,18 +58,28 @@ Deno.serve(async (req) => {
     return json({ error: "Geçersiz istek." }, 400);
   }
 
+  // Every action below targets a user record — confirm it's in the caller's
+  // own company before touching it, so a guessed user_id from another
+  // company can't be reset or deleted.
+  async function belongsToCallerCompany(userId: string) {
+    const { data } = await admin.from("profiles").select("company_id").eq("id", userId).single();
+    return data?.company_id === companyId;
+  }
+
   if (body.action === "create") {
     const { data, error } = await admin.auth.admin.createUser({
       email: body.email as string,
       password: body.password as string,
       email_confirm: true,
-      user_metadata: { name: body.name, role_id: body.role_id },
+      user_metadata: { name: body.name, role_id: body.role_id, company_id: companyId },
     });
     if (error) return json({ error: error.message }, 400);
     return json({ ok: true, id: data.user.id });
   }
 
   if (body.action === "reset_password") {
+    if (!(await belongsToCallerCompany(body.user_id as string)))
+      return json({ error: "Kullanıcı bulunamadı." }, 404);
     const { error } = await admin.auth.admin.updateUserById(body.user_id as string, {
       password: body.password as string,
     });
@@ -67,6 +88,8 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === "delete") {
+    if (!(await belongsToCallerCompany(body.user_id as string)))
+      return json({ error: "Kullanıcı bulunamadı." }, 404);
     const { error } = await admin.auth.admin.deleteUser(body.user_id as string);
     if (error) return json({ error: error.message }, 400);
     return json({ ok: true });

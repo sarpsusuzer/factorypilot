@@ -17,6 +17,7 @@ import { hasPermission, roleForUser } from "./permissions";
 import { colorForPosition } from "./stage-colors";
 import { newId, nextOrderNo } from "./storage";
 import type {
+  Company,
   FieldDefinition,
   FieldScope,
   FieldValue,
@@ -42,6 +43,9 @@ type Snapshot = {
   history: StageHistoryEntry[];
   roles: Role[];
   users: User[];
+  // RLS scopes this to just the acting user's own company row — except for a
+  // platform admin, who has no company and sees every row here instead.
+  companies: Company[];
   settings: Settings;
 };
 
@@ -56,6 +60,7 @@ const EMPTY: Snapshot = {
   history: [],
   roles: [],
   users: [],
+  companies: [],
   settings: DEFAULT_SETTINGS,
 };
 
@@ -102,10 +107,11 @@ async function bootstrap() {
  * comes back empty until they log in, same as the tables just being gated.
  */
 async function refetchAll(session: Session | null) {
-  const [rolesRes, usersRes, stagesRes, fieldsRes, ordersRes, historyRes, settingsRes] =
+  const [rolesRes, usersRes, companiesRes, stagesRes, fieldsRes, ordersRes, historyRes, settingsRes] =
     await Promise.all([
       supabase.from("roles").select("*"),
       supabase.from("profiles").select("*"),
+      supabase.from("companies").select("*"),
       supabase.from("stages").select("*").order("position"),
       supabase.from("field_definitions").select("*").order("position"),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
@@ -118,6 +124,7 @@ async function refetchAll(session: Session | null) {
     session,
     roles: rolesRes.data ?? [],
     users: usersRes.data ?? [],
+    companies: companiesRes.data ?? [],
     stages: stagesRes.data ?? [],
     fields: fieldsRes.data ?? [],
     orders: ordersRes.data ?? [],
@@ -141,6 +148,14 @@ export function historyForOrder(orderId: string) {
 
 // --- Auth --------------------------------------------------------------
 
+// Auth has no notion of "deactivated" — a disabled user or company still
+// authenticates fine here. The is_active check that refuses them happens in
+// IdentityGate instead of here, because that reacts to the same snapshot
+// the global onAuthStateChange listener updates; doing the check as a
+// second query in this function raced that listener (it fires the moment
+// signInWithPassword resolves, before this function's next await runs),
+// which could bounce the login page through a redirect-and-back before this
+// function's own signOut()/error landed, wiping the "just logged in" state.
 export async function login(email: string, password: string): Promise<Result> {
   const trimmed = email.trim();
   if (!trimmed || !password) return { ok: false, error: "E-posta ve şifre zorunludur." };
@@ -676,11 +691,95 @@ export async function removeUser(userId: string): Promise<Result> {
 
 // --- Settings --------------------------------------------------------------
 
+function actingCompanyId() {
+  return snapshot.users.find((u) => u.id === snapshot.session?.user.id)?.company_id ?? null;
+}
+
 export async function updateSettings(patch: Partial<Settings>): Promise<Result> {
+  const companyId = actingCompanyId();
+  if (!companyId) return { ok: false, error: "Şirket bulunamadı." };
+
   const settings = { ...snapshot.settings, ...patch };
-  const { error } = await supabase.from("settings").update(settings).eq("id", true);
+  const { error } = await supabase.from("settings").update(settings).eq("company_id", companyId);
   if (error) return { ok: false, error: error.message };
   update({ settings });
+  return { ok: true };
+}
+
+// --- Companies -------------------------------------------------------------
+// Creating a company also creates its first login, which needs the service
+// role key — see the platform-admin edge function. Toggling active/inactive
+// and updating the logo are plain table updates RLS already allows.
+
+export type CompanyInput = {
+  name: string;
+  admin_name: string;
+  admin_email: string;
+  admin_password: string;
+};
+
+export async function createCompany(input: CompanyInput): Promise<Result> {
+  const { data, error } = await supabase.functions.invoke("platform-admin", {
+    body: { action: "create_company", ...input },
+  });
+  if (error) {
+    const message = (error as { context?: { error?: string } })?.context?.error ?? error.message;
+    return { ok: false, error: message };
+  }
+  if (data?.error) return { ok: false, error: data.error };
+
+  const { data: companies } = await supabase.from("companies").select("*");
+  const { data: users } = await supabase.from("profiles").select("*");
+  update({ companies: companies ?? snapshot.companies, users: users ?? snapshot.users });
+  return { ok: true };
+}
+
+export async function setCompanyActive(companyId: string, isActive: boolean): Promise<Result> {
+  const { error } = await supabase
+    .from("companies")
+    .update({ is_active: isActive })
+    .eq("id", companyId);
+  if (error) return { ok: false, error: error.message };
+
+  update({
+    companies: snapshot.companies.map((c) => (c.id === companyId ? { ...c, is_active: isActive } : c)),
+  });
+  return { ok: true };
+}
+
+export async function setUserActive(userId: string, isActive: boolean): Promise<Result> {
+  const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("id", userId);
+  if (error) return { ok: false, error: error.message };
+
+  update({
+    users: snapshot.users.map((u) => (u.id === userId ? { ...u, is_active: isActive } : u)),
+  });
+  return { ok: true };
+}
+
+export async function uploadCompanyLogo(companyId: string, file: File): Promise<Result> {
+  const ext = file.name.split(".").pop() ?? "png";
+  const path = `${companyId}/logo.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("logos")
+    .upload(path, file, { upsert: true });
+  if (uploadError) return { ok: false, error: uploadError.message };
+
+  const { data: publicUrl } = supabase.storage.from("logos").getPublicUrl(path);
+  // A cache-busting query param, so a replaced logo doesn't keep showing the
+  // old cached image at the same URL.
+  const logoUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ logo_url: logoUrl })
+    .eq("id", companyId);
+  if (updateError) return { ok: false, error: updateError.message };
+
+  update({
+    companies: snapshot.companies.map((c) => (c.id === companyId ? { ...c, logo_url: logoUrl } : c)),
+  });
   return { ok: true };
 }
 
@@ -700,6 +799,7 @@ export function useData() {
 
   const actingUser = state.users.find((user) => user.id === state.session?.user.id);
   const actingRole = roleForUser(state.users, state.roles, actingUser?.id ?? null);
+  const company = state.companies.find((c) => c.id === actingUser?.company_id);
 
   return {
     ...state,
@@ -729,8 +829,13 @@ export function useData() {
     setUserPassword,
     login,
     logout,
+    createCompany,
+    setCompanyActive,
+    setUserActive,
+    uploadCompanyLogo,
     actingUser,
     actingRole,
+    company,
     can: (permission: Permission) => hasPermission(actingRole, permission),
   };
 }

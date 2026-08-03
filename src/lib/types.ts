@@ -98,6 +98,7 @@ export type Permission =
   | "manage_roles"
   | "manage_stages"
   | "manage_fields"
+  | "manage_company"
   | "create_order"
   | "move_stage"
   | "view_reporting";
@@ -115,5 +116,17 @@ export type User = {
   id: string; // matches the Supabase auth user id
   name: string;
   email: string;
-  role_id: string;
+  // Null only for a platform admin — they belong to no company.
+  role_id: string | null;
+  company_id: string | null;
+  is_active: boolean;
+  is_platform_admin: boolean;
+};
+
+export type Company = {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  is_active: boolean;
+  created_at: string;
 };

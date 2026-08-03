@@ -139,7 +139,7 @@ export default function UsersPage() {
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                           onKeyDown={(event) => {
-                            if (event.key === "Enter") handleRename(user.id, user.role_id);
+                            if (event.key === "Enter") handleRename(user.id, user.role_id ?? "");
                             if (event.key === "Escape") setEditingId(null);
                           }}
                           autoFocus
@@ -156,7 +156,7 @@ export default function UsersPage() {
                     <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
                       <Select
-                        value={user.role_id}
+                        value={user.role_id ?? ""}
                         onValueChange={(roleId) => handleRoleChange(user.id, user.name, roleId)}
                       >
                         <SelectTrigger className="w-48">
@@ -175,7 +175,7 @@ export default function UsersPage() {
                       <div className="flex flex-wrap justify-end gap-2">
                         {editing ? (
                           <>
-                            <Button size="sm" onClick={() => handleRename(user.id, user.role_id)}>
+                            <Button size="sm" onClick={() => handleRename(user.id, user.role_id ?? "")}>
                               Kaydet
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>

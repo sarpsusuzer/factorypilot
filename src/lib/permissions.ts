@@ -8,6 +8,7 @@ export const PERMISSIONS: { key: Permission; label: string; hint: string }[] = [
   { key: "manage_roles", label: "Rolleri yönet", hint: "Rol ve kullanıcı ekranlarına erişir" },
   { key: "manage_stages", label: "Aşamaları yönet", hint: "Aşama ayarları ekranına erişir" },
   { key: "manage_fields", label: "Sipariş alanlarını yönet", hint: "Sipariş alanları ekranına erişir" },
+  { key: "manage_company", label: "Şirketi yönet", hint: "Şirket logosunu değiştirebilir" },
   { key: "create_order", label: "Sipariş oluştur", hint: "Yeni sipariş formunu kullanabilir" },
   { key: "move_stage", label: "Aşama değiştir", hint: "Bir siparişi başka aşamaya taşıyabilir" },
   { key: "view_reporting", label: "Raporları görüntüle", hint: "Raporlar ekranına erişir" },

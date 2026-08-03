@@ -31,7 +31,10 @@ export function IdentitySwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-          Rol: {roles.find((role) => role.id === actingUser.role_id)?.name ?? "Rolsüz"}
+          Rol:{" "}
+          {actingUser.is_platform_admin
+            ? "Platform yöneticisi"
+            : (roles.find((role) => role.id === actingUser.role_id)?.name ?? "Rolsüz")}
         </div>
         <DropdownMenuItem
           onSelect={() => {
@@ -47,24 +50,41 @@ export function IdentitySwitcher() {
   );
 }
 
+export const DEACTIVATED_FLAG = "factorypilot.deactivated";
+
 /**
  * Blocks the rest of the app until someone logs in — redirects to /login on
  * first load, and again if the acting user was removed from under them.
  * /login itself is exempt, and logged-in visitors are bounced away from it.
+ *
+ * Also the single place that reacts to a deactivated user or company: auth
+ * itself has no notion of "deactivated" (they authenticate fine), so this
+ * checks the same profiles/companies snapshot every other screen reads and
+ * signs them back out. Doing that check as a one-off query inside login()
+ * instead raced the auth-state listener that drives this same redirect —
+ * it fires the instant sign-in resolves, before a second query could run.
  */
 export function IdentityGate({ children }: { children: React.ReactNode }) {
-  const { loaded, actingUser } = useData();
+  const { loaded, actingUser, company, logout } = useData();
   const pathname = usePathname();
   const router = useRouter();
   const onLoginPage = pathname === "/login";
+  const deactivated =
+    !!actingUser &&
+    (!actingUser.is_active || (!actingUser.is_platform_admin && company?.is_active === false));
 
   useEffect(() => {
     if (!loaded) return;
+    if (deactivated) {
+      sessionStorage.setItem(DEACTIVATED_FLAG, "1");
+      logout();
+      return;
+    }
     if (!actingUser && !onLoginPage) router.replace("/login");
-    if (actingUser && onLoginPage) router.replace("/");
-  }, [loaded, actingUser, onLoginPage, router]);
+    if (actingUser && onLoginPage) router.replace(actingUser.is_platform_admin ? "/admin" : "/");
+  }, [loaded, actingUser, deactivated, onLoginPage, router, logout]);
 
-  if (!loaded) return null;
+  if (!loaded || deactivated) return null;
   if (onLoginPage) return <>{children}</>;
   if (!actingUser) return null;
   return <>{children}</>;

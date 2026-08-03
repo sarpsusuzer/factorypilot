@@ -3,6 +3,7 @@
 import { LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DEACTIVATED_FLAG } from "@/components/identity";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,19 +18,30 @@ import { useData } from "@/lib/data";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, users, roles } = useData();
+  const { login } = useData();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Set by IdentityGate right before it signs a deactivated account back
+  // out — checked once for the initial render, since that's the only moment
+  // it's relevant.
+  const [error, setError] = useState<string | null>(() => {
+    if (typeof window === "undefined" || !sessionStorage.getItem(DEACTIVATED_FLAG)) return null;
+    sessionStorage.removeItem(DEACTIVATED_FLAG);
+    return "Bu hesap pasif durumda.";
+  });
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const result = await login(email, password);
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    try {
+      const result = await login(email, password);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Beklenmedik bir hata oluştu.");
     }
-    router.push("/");
   }
 
   return (
@@ -74,26 +86,6 @@ export default function LoginPage() {
               Giriş yap
             </Button>
           </form>
-
-          {users.length > 0 && (
-            <div className="mt-6 space-y-2 border-t pt-4 text-xs text-muted-foreground">
-              <p>Test hesapları — varsayılan şifre aksi belirtilmedikçe “1234”:</p>
-              <ul className="space-y-1">
-                {users.map((user) => (
-                  <li key={user.id}>
-                    <button
-                      type="button"
-                      onClick={() => setEmail(user.email)}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {user.email}
-                    </button>{" "}
-                    — {user.name} ({roles.find((role) => role.id === user.role_id)?.name ?? "Rolsüz"})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
