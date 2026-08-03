@@ -20,6 +20,7 @@ const LINKS: { href: string; label: string; permission?: Permission }[] = [
 const ADMIN_LINKS = [
   { href: "/admin", label: "Şirketler" },
   { href: "/admin/users", label: "Kullanıcılar" },
+  { href: "/admin/matches", label: "Üretici-Müşteri Eşleştirme" },
 ];
 
 export function SiteNav() {
