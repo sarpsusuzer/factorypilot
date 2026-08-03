@@ -731,9 +731,20 @@ export async function createCompany(input: CompanyInput): Promise<Result> {
   }
   if (data?.error) return { ok: false, error: data.error };
 
-  const { data: companies } = await supabase.from("companies").select("*");
-  const { data: users } = await supabase.from("profiles").select("*");
-  update({ companies: companies ?? snapshot.companies, users: users ?? snapshot.users });
+  // The new company brought its own role, stages, fields and settings row
+  // along with it — refetch everything a platform admin's snapshot tracks,
+  // not just companies/users, or "Yönetici" stays invisible (wrong role
+  // list) until a full page reload.
+  const [companiesRes, usersRes, rolesRes] = await Promise.all([
+    supabase.from("companies").select("*"),
+    supabase.from("profiles").select("*"),
+    supabase.from("roles").select("*"),
+  ]);
+  update({
+    companies: companiesRes.data ?? snapshot.companies,
+    users: usersRes.data ?? snapshot.users,
+    roles: rolesRes.data ?? snapshot.roles,
+  });
   return { ok: true };
 }
 
