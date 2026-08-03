@@ -23,11 +23,14 @@ import {
 import { useData } from "@/lib/data";
 
 export default function AdminCompaniesPage() {
-  const { loaded, actingUser, companies, users, createCompany, setCompanyActive } = useData();
+  const { loaded, actingUser, companies, users, createCompany, renameCompany, setCompanyActive } =
+    useData();
   const [name, setName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   if (loaded && !actingUser?.is_platform_admin) {
     return (
@@ -62,6 +65,16 @@ export default function AdminCompaniesPage() {
     if (!result.ok) toast.error(result.error);
   }
 
+  async function handleRename(companyId: string) {
+    const result = await renameCompany(companyId, editingName);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setEditingId(null);
+    setEditingName("");
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -85,39 +98,77 @@ export default function AdminCompaniesPage() {
                   <TableHead>Ad</TableHead>
                   <TableHead>Kullanıcı</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead className="w-32 text-right">İşlemler</TableHead>
+                  <TableHead className="w-56 text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {companies.map((company) => {
                   const userCount = users.filter((user) => user.company_id === company.id).length;
+                  const editing = editingId === company.id;
                   return (
                     <TableRow key={company.id}>
                       <TableCell className="font-medium">
-                        <span className="flex items-center gap-2">
-                          {company.logo_url && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={company.logo_url}
-                              alt=""
-                              className="size-6 rounded object-contain"
-                            />
-                          )}
-                          {company.name}
-                        </span>
+                        {editing ? (
+                          <Input
+                            value={editingName}
+                            onChange={(event) => setEditingName(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") handleRename(company.id);
+                              if (event.key === "Escape") setEditingId(null);
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            {company.logo_url && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={company.logo_url}
+                                alt=""
+                                className="size-6 rounded object-contain"
+                              />
+                            )}
+                            {company.name}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{userCount}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {company.is_active ? "Aktif" : "Pasif"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleToggleActive(company.id, !company.is_active)}
-                        >
-                          {company.is_active ? "Pasif yap" : "Aktif yap"}
-                        </Button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {editing ? (
+                            <>
+                              <Button size="sm" onClick={() => handleRename(company.id)}>
+                                Kaydet
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                                Vazgeç
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingId(company.id);
+                                  setEditingName(company.name);
+                                }}
+                              >
+                                Düzenle
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleToggleActive(company.id, !company.is_active)}
+                              >
+                                {company.is_active ? "Pasif yap" : "Aktif yap"}
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

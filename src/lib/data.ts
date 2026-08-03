@@ -734,6 +734,21 @@ export async function createCompany(input: CompanyInput): Promise<Result> {
   return { ok: true };
 }
 
+export async function renameCompany(companyId: string, name: string): Promise<Result> {
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: "Şirket adı zorunludur." };
+  if (snapshot.companies.some((c) => c.id !== companyId && c.name.toLowerCase() === trimmed.toLowerCase()))
+    return { ok: false, error: "Bu şirket adı zaten var." };
+
+  const { error } = await supabase.from("companies").update({ name: trimmed }).eq("id", companyId);
+  if (error) return { ok: false, error: error.message };
+
+  update({
+    companies: snapshot.companies.map((c) => (c.id === companyId ? { ...c, name: trimmed } : c)),
+  });
+  return { ok: true };
+}
+
 export async function setCompanyActive(companyId: string, isActive: boolean): Promise<Result> {
   const { error } = await supabase
     .from("companies")
@@ -830,6 +845,7 @@ export function useData() {
     login,
     logout,
     createCompany,
+    renameCompany,
     setCompanyActive,
     setUserActive,
     uploadCompanyLogo,
