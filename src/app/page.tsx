@@ -3,6 +3,7 @@
 import { Eye, Kanban, Layers, List, Search, TriangleAlert, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { OrderStatusBar } from "@/components/order-status-bar";
 import { OrdersKanban } from "@/components/orders-kanban";
 import { StageBadge } from "@/components/stage-badge";
 import { Button } from "@/components/ui/button";
@@ -154,19 +155,31 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Toplam sipariş" value={orders.length} caption="Tüm zamanlar" />
-        <StatCard
-          label="Aktif sipariş"
-          value={activeCount}
-          caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
-        />
-        <StatCard
-          label="Geciken"
-          value={overdueCount}
-          caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla`}
-        />
-      </section>
+      <Card>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatBlock label="Toplam sipariş" value={orders.length} caption="Tüm zamanlar" />
+            <StatBlock
+              label="Aktif sipariş"
+              value={activeCount}
+              caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
+            />
+            <StatBlock
+              label="Geciken"
+              value={overdueCount}
+              caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla`}
+            />
+          </div>
+
+          <div className="space-y-3 border-t pt-6">
+            <div>
+              <p className="text-sm font-medium">Sipariş durumları</p>
+              <p className="text-sm text-muted-foreground">Tüm siparişlerin aşamalara göre dağılımı.</p>
+            </div>
+            <OrderStatusBar orders={orders} stages={stages} />
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="space-y-4">
         {/* The kanban columns already split by stage, so the tabs would be redundant. */}
@@ -380,15 +393,13 @@ function ViewButton({
   );
 }
 
-function StatCard({ label, value, caption }: { label: string; value: number; caption: string }) {
+function StatBlock({ label, value, caption }: { label: string; value: number; caption: string }) {
   return (
-    <Card>
-      <CardContent className="space-y-1">
-        <CardDescription className="text-xs tracking-widest uppercase">{label}</CardDescription>
-        <CardTitle className="text-4xl font-semibold">{value}</CardTitle>
-        <p className="text-sm text-muted-foreground">{caption}</p>
-      </CardContent>
-    </Card>
+    <div className="space-y-1">
+      <CardDescription className="text-xs tracking-widest uppercase">{label}</CardDescription>
+      <CardTitle className="text-4xl font-semibold">{value}</CardTitle>
+      <p className="text-sm text-muted-foreground">{caption}</p>
+    </div>
   );
 }
 

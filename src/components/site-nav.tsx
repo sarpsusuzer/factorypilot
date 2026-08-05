@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 const LINKS: { href: string; label: string; permission?: Permission }[] = [
   { href: "/", label: "Siparişler" },
   { href: "/reporting", label: "Raporlar", permission: "view_reporting" },
-  { href: "/fields", label: "Sipariş alanları", permission: "manage_fields" },
-  { href: "/stages", label: "Aşama ayarları", permission: "manage_stages" },
   { href: "/roles", label: "Roller", permission: "manage_roles" },
   { href: "/users", label: "Kullanıcılar", permission: "manage_roles" },
   { href: "/company", label: "Şirket", permission: "manage_company" },

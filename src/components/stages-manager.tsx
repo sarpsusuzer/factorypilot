@@ -31,7 +31,7 @@ import { useData } from "@/lib/data";
 import { STAGE_COLORS, stageColorDot } from "@/lib/stage-colors";
 import type { StageColor } from "@/lib/types";
 
-export default function StagesPage() {
+export function StagesManager() {
   const {
     loaded,
     stages,
@@ -48,12 +48,7 @@ export default function StagesPage() {
   const [editingName, setEditingName] = useState("");
 
   if (loaded && !can("manage_stages")) {
-    return (
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Aşama ayarları</h1>
-        <p className="text-muted-foreground">Bu ekrana erişim yetkiniz yok.</p>
-      </div>
-    );
+    return <p className="text-muted-foreground">Bu bölüme erişim yetkiniz yok.</p>;
   }
 
   async function handleAdd(event: React.FormEvent) {
@@ -96,20 +91,15 @@ export default function StagesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Aşama ayarları</h1>
-        <p className="text-sm text-muted-foreground">
-          Bu listenin sırası yalnızca görüntüleme sırasıdır — siparişler her an herhangi bir
-          aşamaya taşınabilir.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Bu listenin sırası yalnızca görüntüleme sırasıdır — siparişler her an herhangi bir aşamaya
+        taşınabilir.
+      </p>
 
       <Card>
         <CardHeader>
           <CardTitle>Aşamalar</CardTitle>
-          <CardDescription>
-            {loaded ? `${stages.length} aşama` : "Yükleniyor…"}
-          </CardDescription>
+          <CardDescription>{loaded ? `${stages.length} aşama` : "Yükleniyor…"}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <Table>
@@ -162,9 +152,7 @@ export default function StagesPage() {
                             >
                               <span className={`size-3 rounded-full ${swatch.dot}`} />
                               {swatch.label}
-                              {swatch.key === stage.color && (
-                                <Check className="ml-auto size-3.5" />
-                              )}
+                              {swatch.key === stage.color && <Check className="ml-auto size-3.5" />}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>

@@ -113,3 +113,59 @@ export function isOverdue(
 ) {
   return timeInCurrentStage(order, history, now) > thresholdDays * DAY_MS;
 }
+
+/** How far past the threshold an already-overdue order's wait has gone. */
+export function exceededBy(elapsedMs: number, thresholdDays: number) {
+  return elapsedMs - thresholdDays * DAY_MS;
+}
+
+/** The stage currently holding the most orders — null when there are none. */
+export function busiestStage(counts: ReturnType<typeof countByStage>) {
+  return counts.reduce<ReturnType<typeof countByStage>[number] | null>(
+    (max, entry) => (entry.count > (max?.count ?? -1) ? entry : max),
+    null,
+  );
+}
+
+/** The stage with the highest average dwell time — the pipeline's bottleneck. */
+export function slowestStage(averages: ReturnType<typeof averageTimePerStage>) {
+  return averages.reduce<ReturnType<typeof averageTimePerStage>[number] | null>(
+    (max, entry) =>
+      entry.averageMs !== null && entry.averageMs > (max?.averageMs ?? -1) ? entry : max,
+    null,
+  );
+}
+
+/** "17 Tem" — no year, for dense axis labels. */
+export function formatShortDate(iso: string) {
+  return new Date(iso).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" });
+}
+
+/** New orders per calendar day over the trailing window, oldest first. */
+export function ordersCreatedByDay(orders: Order[], days: number, now = Date.now()) {
+  const dayKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const series = Array.from({ length: days }, (_, i) => {
+    const date = new Date(today.getTime() - (days - 1 - i) * DAY_MS);
+    return { key: dayKey(date), iso: date.toISOString(), count: 0 };
+  });
+  const byKey = new Map(series.map((point) => [point.key, point]));
+
+  for (const order of orders) {
+    const point = byKey.get(dayKey(new Date(order.created_at)));
+    if (point) point.count += 1;
+  }
+
+  return series.map(({ iso, count }) => ({ date: iso, count }));
+}
+
+/** Stages with a completed average, ranked slowest first. */
+export function rankByAverageTime(averages: ReturnType<typeof averageTimePerStage>) {
+  return averages
+    .filter((entry): entry is typeof entry & { averageMs: number } => entry.averageMs !== null)
+    .sort((a, b) => b.averageMs - a.averageMs);
+}

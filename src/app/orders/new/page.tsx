@@ -184,7 +184,7 @@ export default function NewOrderPage() {
           Henüz hiç sipariş alanı tanımlı değil — siparişin içi boş olurdu.
         </p>
         <Button asChild>
-          <Link href="/fields">Sipariş alanlarını ayarla</Link>
+          <Link href="/company?tab=fields">Sipariş alanlarını ayarla</Link>
         </Button>
       </div>
     );
@@ -333,7 +333,7 @@ export default function NewOrderPage() {
           !isMusteri && (
             <p className="text-sm text-muted-foreground">
               Bu siparişte kalem yok. Bir siparişe birden fazla kalem koymak için{" "}
-              <Link href="/fields" className="underline">
+              <Link href="/company?tab=fields" className="underline">
                 Sipariş alanları
               </Link>{" "}
               ekranından bir alanın kapsamını <span className="font-medium">Kalem</span> yapın.

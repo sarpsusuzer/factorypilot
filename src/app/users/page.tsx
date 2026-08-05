@@ -30,8 +30,22 @@ import {
 import { useData } from "@/lib/data";
 
 export default function UsersPage() {
-  const { loaded, users, roles, actingUser, can, addUser, updateUser, removeUser, setUserPassword } =
-    useData();
+  const {
+    loaded,
+    users: allUsers,
+    company,
+    roles,
+    actingUser,
+    can,
+    addUser,
+    updateUser,
+    removeUser,
+    setUserPassword,
+  } = useData();
+  // `useData().users` is scoped wider than this — it also carries cross-company
+  // profiles the app needs to resolve an order's creator name elsewhere. This
+  // screen manages accounts, so it must only ever show this company's own.
+  const users = allUsers.filter((user) => user.company_id === company?.id);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");

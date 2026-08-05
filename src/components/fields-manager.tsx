@@ -57,19 +57,14 @@ type FormState = {
   is_title_field: boolean;
 };
 
-export default function FieldsPage() {
+export function FieldsManager() {
   const { loaded, fields, can, addField, updateField, removeField, moveField, setTitleField } =
     useData();
   const [form, setForm] = useState<FormState>(BLANK);
   const [editing, setEditing] = useState<FieldDefinition | null>(null);
 
   if (loaded && !can("manage_fields")) {
-    return (
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Sipariş alanları</h1>
-        <p className="text-muted-foreground">Bu ekrana erişim yetkiniz yok.</p>
-      </div>
-    );
+    return <p className="text-muted-foreground">Bu bölüme erişim yetkiniz yok.</p>;
   }
 
   function toInput(state: FormState): FieldInput {
@@ -146,122 +141,117 @@ export default function FieldsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Sipariş alanları</h1>
-        <p className="text-sm text-muted-foreground">
-          Bu işletmede bir siparişin neye benzediğini tanımlar. Yeni sipariş formu bu listeden
-          oluşturulur — hiçbiri kodda sabit değildir. Sipariş kapsamındaki alanlar bir kez
-          doldurulur; kalem kapsamındaki alanlar her kalem için tekrarlanır.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Bu işletmede bir siparişin neye benzediğini tanımlar. Yeni sipariş formu bu listeden
+        oluşturulur — hiçbiri kodda sabit değildir. Sipariş kapsamındaki alanlar bir kez
+        doldurulur; kalem kapsamındaki alanlar her kalem için tekrarlanır.
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-      <Card>
-        <CardHeader>
-          <CardTitle>Alanlar</CardTitle>
-          <CardDescription>
-            {loaded ? `${fields.length} alan` : "Yükleniyor…"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {fields.length === 0 ? (
-            <p className="py-10 text-center text-muted-foreground">
-              Henüz alan yok — sağdan ilkini ekleyin.
-            </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {fields.map((field, index) => (
-                <Card key={field.id} className="gap-3 py-4">
-                  <CardHeader className="px-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="flex items-center gap-2 font-medium">
-                        <span className="text-muted-foreground">{index + 1}.</span>
-                        {field.label}
-                      </span>
-                      {field.is_title_field && (
-                        <Badge variant="secondary" title="Siparişin görünen adı olarak kullanılır">
-                          <Star className="size-3" />
-                          Başlık
+        <Card>
+          <CardHeader>
+            <CardTitle>Alanlar</CardTitle>
+            <CardDescription>{loaded ? `${fields.length} alan` : "Yükleniyor…"}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {fields.length === 0 ? (
+              <p className="py-10 text-center text-muted-foreground">
+                Henüz alan yok — sağdan ilkini ekleyin.
+              </p>
+            ) : (
+              <div className="grid gap-4">
+                {fields.map((field, index) => (
+                  <Card key={field.id} className="gap-3 py-4">
+                    <CardHeader className="px-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="flex items-center gap-2 font-medium">
+                          <span className="text-muted-foreground">{index + 1}.</span>
+                          {field.label}
+                        </span>
+                        {field.is_title_field && (
+                          <Badge variant="secondary" title="Siparişin görünen adı olarak kullanılır">
+                            <Star className="size-3" />
+                            Başlık
+                          </Badge>
+                        )}
+                      </div>
+                      <CardDescription className="font-mono text-xs">{field.key}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 text-sm">
+                      <Field label="Kapsam">
+                        <Badge variant={field.scope === "item" ? "secondary" : "outline"}>
+                          {field.scope === "item" ? "Kalem başına" : "Sipariş başına"}
                         </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="font-mono text-xs">{field.key}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 text-sm">
-                    <Field label="Kapsam">
-                      <Badge variant={field.scope === "item" ? "secondary" : "outline"}>
-                        {field.scope === "item" ? "Kalem başına" : "Sipariş başına"}
-                      </Badge>
-                    </Field>
-                    <Field label="Tip">
-                      <span className="text-muted-foreground">
-                        {FIELD_TYPES.find((type) => type.value === field.type)?.label ?? field.type}
-                      </span>
-                    </Field>
-                    <Field label="Zorunlu">
-                      <span className="text-muted-foreground">{field.required ? "Evet" : "Hayır"}</span>
-                    </Field>
-                    <Field label="Seçenekler">
-                      <span className="line-clamp-1 text-muted-foreground">
-                        {field.options.join(", ") || "—"}
-                      </span>
-                    </Field>
-                  </CardContent>
-                  <CardContent className="flex flex-wrap gap-2 px-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => moveField(field.id, "up")}
-                      disabled={index === 0}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => moveField(field.id, "down")}
-                      disabled={index === fields.length - 1}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSetTitle(field)}
-                      disabled={field.is_title_field || field.scope === "item"}
-                    >
-                      Başlık
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => startEditing(field)}>
-                      Düzenle
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleRemove(field)}>
-                      Sil
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      </Field>
+                      <Field label="Tip">
+                        <span className="text-muted-foreground">
+                          {FIELD_TYPES.find((type) => type.value === field.type)?.label ?? field.type}
+                        </span>
+                      </Field>
+                      <Field label="Zorunlu">
+                        <span className="text-muted-foreground">{field.required ? "Evet" : "Hayır"}</span>
+                      </Field>
+                      <Field label="Seçenekler">
+                        <span className="line-clamp-1 text-muted-foreground">
+                          {field.options.join(", ") || "—"}
+                        </span>
+                      </Field>
+                    </CardContent>
+                    <CardContent className="flex flex-wrap gap-2 px-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => moveField(field.id, "up")}
+                        disabled={index === 0}
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => moveField(field.id, "down")}
+                        disabled={index === fields.length - 1}
+                      >
+                        ↓
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSetTitle(field)}
+                        disabled={field.is_title_field || field.scope === "item"}
+                      >
+                        Başlık
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => startEditing(field)}>
+                        Düzenle
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleRemove(field)}>
+                        Sil
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Alan ekle</CardTitle>
-          <CardDescription>
-            Değerler bu anahtar altında saklanır. Etiketten otomatik doldurulur.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAdd} className="grid gap-4">
-            <FieldForm form={form} setForm={setForm} singleColumn />
-            <div>
-              <Button type="submit">Alanı ekle</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Alan ekle</CardTitle>
+            <CardDescription>
+              Değerler bu anahtar altında saklanır. Etiketten otomatik doldurulur.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdd} className="grid gap-4">
+              <FieldForm form={form} setForm={setForm} singleColumn />
+              <div>
+                <Button type="submit">Alanı ekle</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog
