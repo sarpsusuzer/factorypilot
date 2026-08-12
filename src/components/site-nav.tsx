@@ -44,9 +44,7 @@ export function SiteNav() {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={company.logo_url} alt="" className="size-[26px] rounded-sm object-contain" />
       ) : (
-        <span className="grid size-[26px] place-items-center rounded-sm bg-primary text-primary-foreground shadow-xs">
-          <BrandMark className="size-3.5" />
-        </span>
+        <BrandMark className="size-[22px] text-foreground" />
       )}
       <span className="text-[15px] font-semibold tracking-tight text-foreground">
         FactoryPilot

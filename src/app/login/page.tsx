@@ -43,9 +43,7 @@ export default function LoginPage() {
     <div className="-my-8 flex min-h-[calc(100vh-3.5rem)] items-center justify-center">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <span className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground shadow-md">
-            <BrandMark className="size-6" />
-          </span>
+          <BrandMark className="size-11 text-foreground" />
           <div className="space-y-1">
             <h1 className="text-lg font-semibold tracking-tight">FactoryPilot&apos;a giriş yap</h1>
             <p className="text-sm text-muted-foreground">E-postan ve şifrenle giriş yap.</p>
