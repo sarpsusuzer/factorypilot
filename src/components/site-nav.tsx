@@ -3,6 +3,7 @@
 import { Building2, ClipboardList, LineChart, ShieldCheck, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "@/components/brand-mark";
 import { IdentitySwitcher } from "@/components/identity";
 import { useData } from "@/lib/data";
 import type { Permission } from "@/lib/types";
@@ -43,8 +44,8 @@ export function SiteNav() {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={company.logo_url} alt="" className="size-[26px] rounded-sm object-contain" />
       ) : (
-        <span className="grid size-[26px] place-items-center rounded-sm bg-primary font-mono text-[11px] font-bold text-primary-foreground shadow-xs">
-          FP
+        <span className="grid size-[26px] place-items-center rounded-sm bg-primary text-primary-foreground shadow-xs">
+          <BrandMark className="size-3.5" />
         </span>
       )}
       <span className="text-[15px] font-semibold tracking-tight text-foreground">
