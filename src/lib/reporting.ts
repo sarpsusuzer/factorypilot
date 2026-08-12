@@ -49,6 +49,14 @@ export function withinLastDays(iso: string, days: number, now = Date.now()) {
   return Date.parse(iso) >= now - days * DAY_MS;
 }
 
+/** Was this timestamp within [startDate, endDate] (yyyy-mm-dd, either end optional, inclusive)? */
+export function withinDateRange(iso: string, startDate: string, endDate: string) {
+  const time = Date.parse(iso);
+  if (startDate && time < Date.parse(`${startDate}T00:00:00`)) return false;
+  if (endDate && time > Date.parse(`${endDate}T23:59:59.999`)) return false;
+  return true;
+}
+
 export function countByStage(orders: Order[], stages: Stage[]) {
   return stages.map((stage) => ({
     stage,
@@ -161,6 +169,31 @@ export function ordersCreatedByDay(orders: Order[], days: number, now = Date.now
   }
 
   return series.map(({ iso, count }) => ({ date: iso, count }));
+}
+
+/**
+ * How many orders have ever reached each stage (currently sitting there, or
+ * passed through it on their way elsewhere), in stage order. Since orders can
+ * move backwards, this is a "reach" funnel, not a strict linear conversion.
+ */
+export function stageReachCounts(orders: Order[], stages: Stage[], history: StageHistoryEntry[]) {
+  const reached = new Map<string, Set<string>>();
+  for (const order of orders) {
+    const set = reached.get(order.current_stage) ?? new Set<string>();
+    set.add(order.id);
+    reached.set(order.current_stage, set);
+  }
+  for (const entry of history) {
+    const set = reached.get(entry.to_stage) ?? new Set<string>();
+    set.add(entry.order_id);
+    reached.set(entry.to_stage, set);
+  }
+
+  const total = orders.length;
+  return stages.map((stage) => {
+    const count = reached.get(stage.name)?.size ?? 0;
+    return { stage, count, share: total > 0 ? count / total : 0 };
+  });
 }
 
 /** Stages with a completed average, ranked slowest first. */

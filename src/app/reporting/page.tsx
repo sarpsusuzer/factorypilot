@@ -18,13 +18,18 @@ import {
   ordersCreatedByDay,
   rankByAverageTime,
   slowestStage,
+  stageReachCounts,
 } from "@/lib/reporting";
+import { dedupeStagesByName } from "@/lib/stage-colors";
 
 const HISTORY_WINDOW_DAYS = 30;
 
 export default function ReportingPage() {
-  const { loaded, orders, stages, history, can } = useData();
+  const { loaded, orders, stages: rawStages, history, can } = useData();
 
+  // A matched müşteri also sees the üretici's stages — collapse same-named
+  // rows so a shared stage name doesn't get counted/ranked twice.
+  const stages = useMemo(() => dedupeStagesByName(rawStages), [rawStages]);
   const averages = useMemo(() => averageTimePerStage(stages, history), [history, stages]);
   const dailyVolume = useMemo(
     () => ordersCreatedByDay(orders, HISTORY_WINDOW_DAYS),
@@ -33,6 +38,11 @@ export default function ReportingPage() {
   const ranked = useMemo(() => rankByAverageTime(averages), [averages]);
 
   const slowest = useMemo(() => slowestStage(averages), [averages]);
+
+  const funnel = useMemo(
+    () => stageReachCounts(orders, stages, history),
+    [orders, stages, history],
+  );
 
   if (loaded && !can("view_reporting")) {
     return (
@@ -126,6 +136,43 @@ export default function ReportingPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Aşama huni görünümü</CardTitle>
+          <CardDescription>
+            Her aşamaya bugüne kadar uğramış sipariş sayısı, tüm siparişlere oranla. Sipariş geri
+            adım atabildiği için sıralama katı bir dönüşüm hunisi değildir.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {orders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Henüz sipariş yok.</p>
+          ) : (
+            <ol className="space-y-3">
+              {funnel.map(({ stage, count, share }) => (
+                <li key={stage.id} className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <StageBadge stage={stage.name} />
+                      <span className="font-medium tabular-nums">{count} sipariş</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-foreground/70"
+                        style={{ width: `${share * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="w-12 shrink-0 text-right text-xs text-muted-foreground">
+                    %{Math.round(share * 100)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

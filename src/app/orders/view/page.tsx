@@ -73,7 +73,6 @@ function OrderDetail() {
     history,
     settings,
     users,
-    can,
     getOrder,
     historyForOrder,
     moveOrderToStage,
@@ -109,7 +108,7 @@ function OrderDetail() {
   const customerCompany = order.customer_company_id
     ? companies.find((c) => c.id === order.customer_company_id)
     : undefined;
-  const canMoveStage = can("move_stage") && order.company_id === company?.id;
+  const canMoveStage = order.company_id === company?.id;
 
   const title = orderTitle(order, orderFieldsList);
   const perOrder = orderFields(orderFieldsList);

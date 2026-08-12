@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Kanban, Layers, List, Search, TriangleAlert, User } from "lucide-react";
+import { Check, ChevronDown, Eye, Kanban, Layers, List, Search, TriangleAlert, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { OrderStatusBar } from "@/components/order-status-bar";
@@ -8,6 +8,13 @@ import { OrdersKanban } from "@/components/orders-kanban";
 import { StageBadge } from "@/components/stage-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -37,27 +44,56 @@ import {
 import {
   formatDateTime,
   formatDuration,
+  formatShortDate,
   isOverdue,
   timeInCurrentStage,
+  withinDateRange,
   withinLastDays,
 } from "@/lib/reporting";
+import { dedupeStagesByName } from "@/lib/stage-colors";
 import type { Order } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ALL = "__all__";
+const CUSTOM = "__custom__";
+const DATE_PRESETS = [
+  { value: ALL, label: "Tüm tarihler" },
+  { value: "7", label: "Son 7 gün" },
+  { value: "30", label: "Son 30 gün" },
+  { value: "90", label: "Son 90 gün" },
+];
 type SortKey = "order_no" | "created_at" | "title";
 type View = "table" | "kanban";
 
+function dateFilterLabel(dateFilter: string, customStart: string, customEnd: string) {
+  const preset = DATE_PRESETS.find((option) => option.value === dateFilter);
+  if (preset) return preset.label;
+  // Date inputs give a bare yyyy-mm-dd — parse as local midnight, not UTC,
+  // so the label doesn't roll back a day west of UTC.
+  const short = (date: string) => formatShortDate(`${date}T00:00:00`);
+  if (customStart && customEnd) return `${short(customStart)} – ${short(customEnd)}`;
+  if (customStart) return `${short(customStart)}’den beri`;
+  if (customEnd) return `${short(customEnd)}’e kadar`;
+  return "Özel aralık";
+}
+
 export default function OrdersPage() {
-  const { loaded, orders, stages, fields, companies, company, history, settings, can } = useData();
+  const { loaded, orders, stages: rawStages, fields, companies, company, history, settings, can } =
+    useData();
   const [view, setView] = useState<View>("table");
   const [stageTab, setStageTab] = useState<string>(ALL);
   const [clientFilter, setClientFilter] = useState<string>(ALL);
   const [dateFilter, setDateFilter] = useState<string>(ALL);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
 
+  // A matched müşteri also sees the üretici's stages (needed elsewhere to
+  // build the create-order form); collapse same-named rows so the tabs,
+  // kanban columns, and status bar don't show every stage twice.
+  const stages = useMemo(() => dedupeStagesByName(rawStages), [rawStages]);
   const lastStage = stages[stages.length - 1]?.name;
   // A müşteri's own field list is empty — their orders each belong to
   // whichever üretici they picked, so header columns fall back to the
@@ -92,7 +128,10 @@ export default function OrdersPage() {
     return orders.filter((order) => {
       const matchesClient = clientFilter === ALL || orderTitle(order, fieldsForOrder(order)) === clientFilter;
       const matchesDate =
-        dateFilter === ALL || withinLastDays(order.created_at, Number(dateFilter));
+        dateFilter === ALL ||
+        (dateFilter === CUSTOM
+          ? withinDateRange(order.created_at, customStart, customEnd)
+          : withinLastDays(order.created_at, Number(dateFilter)));
       const matchesSearch =
         !term ||
         order.order_no.toLowerCase().includes(term) ||
@@ -100,7 +139,7 @@ export default function OrdersPage() {
       return matchesClient && matchesDate && matchesSearch;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientFilter, dateFilter, fields, orders, search]);
+  }, [clientFilter, dateFilter, customStart, customEnd, fields, orders, search]);
 
   const visibleOrders = useMemo(() => {
     const filtered = matchingOrders.filter(
@@ -132,27 +171,11 @@ export default function OrdersPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Siparişler</h1>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-full border p-0.5">
-            <ViewButton
-              active={view === "table"}
-              onClick={() => setView("table")}
-              icon={<List className="size-4" />}
-              label="Tablo"
-            />
-            <ViewButton
-              active={view === "kanban"}
-              onClick={() => setView("kanban")}
-              icon={<Kanban className="size-4" />}
-              label="Kanban"
-            />
-          </div>
-          {can("create_order") && (
-            <Button asChild>
-              <Link href="/orders/new">Yeni sipariş</Link>
-            </Button>
-          )}
-        </div>
+        {can("create_order") && (
+          <Button asChild>
+            <Link href="/orders/new">Yeni sipariş</Link>
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -182,23 +205,6 @@ export default function OrdersPage() {
       </Card>
 
       <section className="space-y-4">
-        {/* The kanban columns already split by stage, so the tabs would be redundant. */}
-        {view === "table" && (
-          <Tabs value={stageTab} onValueChange={setStageTab}>
-            <TabsList variant="line" className="h-auto w-full justify-start gap-4 overflow-x-auto border-b pb-2">
-              <StageTab value={ALL} label="Tümü" count={matchingOrders.length} />
-              {stages.map((stage) => (
-                <StageTab
-                  key={stage.id}
-                  value={stage.name}
-                  label={stage.name}
-                  count={matchingOrders.filter((order) => order.current_stage === stage.name).length}
-                />
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-64 flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -229,19 +235,98 @@ export default function OrdersPage() {
             </SelectContent>
           </Select>
 
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-auto min-w-36 rounded-full" aria-label="Tarihe göre filtrele">
-              <Layers className="size-4 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Tüm tarihler</SelectItem>
-              <SelectItem value="7">Son 7 gün</SelectItem>
-              <SelectItem value="30">Son 30 gün</SelectItem>
-              <SelectItem value="90">Son 90 gün</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-auto min-w-36 justify-between rounded-full font-normal"
+                aria-label="Tarihe göre filtrele"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Layers className="size-4 text-muted-foreground" />
+                  {dateFilterLabel(dateFilter, customStart, customEnd)}
+                </span>
+                <ChevronDown className="size-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              {DATE_PRESETS.map((preset) => (
+                <DropdownMenuItem
+                  key={preset.value}
+                  onSelect={() => {
+                    setDateFilter(preset.value);
+                    setCustomStart("");
+                    setCustomEnd("");
+                  }}
+                >
+                  {preset.label}
+                  {dateFilter === preset.value && <Check className="ml-auto size-3.5" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <div className="space-y-2 px-1.5 py-1">
+                <p className="text-xs font-medium text-muted-foreground">Özel aralık</p>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={customStart}
+                    onChange={(event) => {
+                      setCustomStart(event.target.value);
+                      setDateFilter(CUSTOM);
+                    }}
+                    max={customEnd || undefined}
+                    aria-label="Başlangıç tarihi"
+                    className="h-8 text-xs"
+                  />
+                  <span className="text-xs text-muted-foreground">–</span>
+                  <Input
+                    type="date"
+                    value={customEnd}
+                    onChange={(event) => {
+                      setCustomEnd(event.target.value);
+                      setDateFilter(CUSTOM);
+                    }}
+                    min={customStart || undefined}
+                    aria-label="Bitiş tarihi"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="flex items-center rounded-full bg-secondary p-0.5">
+            <ViewButton
+              active={view === "table"}
+              onClick={() => setView("table")}
+              icon={<List className="size-4" />}
+              label="Tablo"
+            />
+            <ViewButton
+              active={view === "kanban"}
+              onClick={() => setView("kanban")}
+              icon={<Kanban className="size-4" />}
+              label="Kanban"
+            />
+          </div>
         </div>
+
+        {/* The kanban columns already split by stage, so the tabs would be redundant. */}
+        {view === "table" && (
+          <Tabs value={stageTab} onValueChange={setStageTab}>
+            <TabsList variant="line" className="h-auto w-full justify-start gap-4 overflow-x-auto border-b pb-2">
+              <StageTab value={ALL} label="Tümü" count={matchingOrders.length} />
+              {stages.map((stage) => (
+                <StageTab
+                  key={stage.id}
+                  value={stage.name}
+                  label={stage.name}
+                  count={matchingOrders.filter((order) => order.current_stage === stage.name).length}
+                />
+              ))}
+            </TabsList>
+          </Tabs>
+        )}
       </section>
 
       {view === "kanban" && (
@@ -383,8 +468,10 @@ function ViewButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors",
-        active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+        active
+          ? "bg-background text-foreground shadow-xs"
+          : "text-muted-foreground hover:bg-white/70 hover:text-foreground",
       )}
     >
       {icon}
