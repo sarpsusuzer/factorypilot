@@ -212,14 +212,14 @@ export default function OrdersPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Sipariş no veya herhangi bir alan…"
-              className="rounded-full pl-9"
+              className="pl-9"
               aria-label="Siparişlerde ara"
             />
           </div>
 
           <Select value={clientFilter} onValueChange={setClientFilter}>
             <SelectTrigger
-              className="w-auto min-w-40 rounded-full"
+              className="w-auto min-w-40"
               aria-label={`${nameField?.label ?? "Sipariş"} ile filtrele`}
             >
               <User className="size-4 text-muted-foreground" />
@@ -239,7 +239,7 @@ export default function OrdersPage() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-auto min-w-36 justify-between rounded-full font-normal"
+                className="w-auto min-w-36 justify-between border-input bg-background font-normal"
                 aria-label="Tarihe göre filtrele"
               >
                 <span className="flex items-center gap-1.5">
@@ -295,7 +295,7 @@ export default function OrdersPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex items-center rounded-full bg-secondary p-0.5">
+          <div className="flex items-center rounded-md bg-secondary p-0.5">
             <ViewButton
               active={view === "table"}
               onClick={() => setView("table")}
@@ -468,7 +468,7 @@ function ViewButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+        "flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-sm font-medium transition-colors",
         active
           ? "bg-background text-foreground shadow-xs"
           : "text-muted-foreground hover:bg-white/70 hover:text-foreground",

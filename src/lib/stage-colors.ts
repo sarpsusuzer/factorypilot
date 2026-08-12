@@ -37,6 +37,12 @@ export function stageColorDot(color: StageColor | undefined) {
   return (color && BY_KEY.get(color)?.dot) ?? BY_KEY.get(DEFAULT_STAGE_COLOR)!.dot;
 }
 
+/** The badge's text-* class, e.g. for `fill="currentColor"` on an SVG mark. */
+export function stageColorText(color: StageColor | undefined) {
+  const badge = (color && BY_KEY.get(color)?.badge) ?? BY_KEY.get(DEFAULT_STAGE_COLOR)!.badge;
+  return badge.split(" ").find((token) => token.startsWith("text-")) ?? "text-slate-700";
+}
+
 /** Cycles through the palette so newly seeded/added stages get varied colours by default. */
 export function colorForPosition(position: number): StageColor {
   return STAGE_COLORS[position % STAGE_COLORS.length].key;

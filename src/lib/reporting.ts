@@ -1,7 +1,8 @@
 // Pure calculations derived from orders + stage history.
 // No storage access here — feed it whatever the data layer returns.
 
-import type { Order, Stage, StageHistoryEntry } from "./types";
+import { isEmptyValue } from "./fields";
+import type { FieldDefinition, FieldValue, Order, Stage, StageHistoryEntry } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -149,16 +150,19 @@ export function formatShortDate(iso: string) {
   return new Date(iso).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" });
 }
 
-/** New orders per calendar day over the trailing window, oldest first. */
-export function ordersCreatedByDay(orders: Order[], days: number, now = Date.now()) {
-  const dayKey = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const dayKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
+/** New orders per calendar day between two dates (inclusive), oldest first. */
+export function ordersCreatedByDayRange(orders: Order[], start: Date, end: Date) {
+  const startDay = new Date(start);
+  startDay.setHours(0, 0, 0, 0);
+  const endDay = new Date(end);
+  endDay.setHours(0, 0, 0, 0);
+  const days = Math.max(1, Math.round((endDay.getTime() - startDay.getTime()) / DAY_MS) + 1);
 
   const series = Array.from({ length: days }, (_, i) => {
-    const date = new Date(today.getTime() - (days - 1 - i) * DAY_MS);
+    const date = new Date(startDay.getTime() + i * DAY_MS);
     return { key: dayKey(date), iso: date.toISOString(), count: 0 };
   });
   const byKey = new Map(series.map((point) => [point.key, point]));
@@ -169,6 +173,11 @@ export function ordersCreatedByDay(orders: Order[], days: number, now = Date.now
   }
 
   return series.map(({ iso, count }) => ({ date: iso, count }));
+}
+
+/** New orders per calendar day over the trailing window, oldest first. */
+export function ordersCreatedByDay(orders: Order[], days: number, now = Date.now()) {
+  return ordersCreatedByDayRange(orders, new Date(now - (days - 1) * DAY_MS), new Date(now));
 }
 
 /**
@@ -201,4 +210,53 @@ export function rankByAverageTime(averages: ReturnType<typeof averageTimePerStag
   return averages
     .filter((entry): entry is typeof entry & { averageMs: number } => entry.averageMs !== null)
     .sort((a, b) => b.averageMs - a.averageMs);
+}
+
+/**
+ * Average time from creation to the first time an order reached the given
+ * stage — end-to-end cycle time. Orders that haven't reached it yet are
+ * excluded, so this only reflects completed runs.
+ */
+export function averageCycleTime(
+  orders: Order[],
+  history: StageHistoryEntry[],
+  finalStageName: string | undefined,
+) {
+  if (!finalStageName) return { averageMs: null as number | null, sampleSize: 0 };
+
+  let total = 0;
+  let count = 0;
+  for (const order of orders) {
+    const first = history
+      .filter((entry) => entry.order_id === order.id && entry.to_stage === finalStageName)
+      .sort((a, b) => Date.parse(a.changed_at) - Date.parse(b.changed_at))[0];
+    if (!first) continue;
+    total += Date.parse(first.changed_at) - Date.parse(order.created_at);
+    count += 1;
+  }
+  return { averageMs: count > 0 ? total / count : null, sampleSize: count };
+}
+
+/**
+ * How orders split across one select/multiselect field's option values —
+ * counts every selection, so a multiselect's total can exceed the order
+ * count. Item-scoped fields count every line item across every order.
+ */
+export function breakdownByField(orders: Order[], field: FieldDefinition) {
+  const values: FieldValue[] =
+    field.scope === "item"
+      ? orders.flatMap((order) => (order.items ?? []).map((item) => item.field_values?.[field.key] ?? null))
+      : orders.map((order) => order.field_values?.[field.key] ?? null);
+
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    if (isEmptyValue(value)) continue;
+    const entries = Array.isArray(value) ? value.map(String) : [String(value)];
+    for (const entry of entries) counts.set(entry, (counts.get(entry) ?? 0) + 1);
+  }
+
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, count, share: total > 0 ? count / total : 0 }))
+    .sort((a, b) => b.count - a.count);
 }

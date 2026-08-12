@@ -23,7 +23,7 @@ export function IdentitySwitcher() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm hover:bg-muted"
+          className="flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted"
         >
           <UserRound className="size-4 text-muted-foreground" />
           {actingUser.name}
