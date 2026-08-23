@@ -1,0 +1,70 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Design System/Introduction" />
+
+# FactoryPilot design system
+
+Every screen in FactoryPilot is assembled from what is catalogued here. Three sections:
+
+- **Design System** — the tokens. Colours, type scale, radius ladder, stage swatches. These
+  pages read their values from the live stylesheet, so they cannot drift from the source.
+- **UI Kit** — the shadcn primitives, restyled. Button, Input, Card, Table, Dialog and the rest.
+- **Patterns** — the pieces built on top that are specific to this product: `StatCard`,
+  `SectionCard`, `ListRow`, `StageBadge`, `OrderStatusBar`, `OverviewLineChart`.
+
+## The rules worth knowing
+
+**No shadows, anywhere.** Depth comes from fill contrast plus hairline borders. All five
+`--shadow-*` tokens are set to `none` rather than deleted, so a stray `shadow-*` utility from a
+copy-pasted component renders flat instead of breaking the look.
+
+**Three surfaces.** `--background` (the page), `--card` (a panel on it), `--muted` (an inset
+well). Anything nested deeper than that is usually a sign the layout wants rethinking, not a
+fourth surface. `StatCard` is the one deliberate inversion — a background-filled card holding a
+card-filled value block, which makes the number read as the raised element.
+
+**One inverse surface.** Toasts and tooltips stay dark regardless of the page. That is what
+`--inverse` exists for; nothing else should use it.
+
+**Colour carries meaning in exactly one place.** Stage colours. Everything else is neutral, so
+that when something is coloured, it means something. Stage swatches are a fixed set of eleven
+presets rather than a free picker, because the text/background contrast of each pair is checked
+once — here — rather than left to whoever configures the stages.
+
+**Radius is a fixed px ladder**, not derived from a single multiplier, so small controls and
+large panels can be tuned independently. Panels are `--radius-xl` (16px), controls are
+`--radius-md` (10px), pills are fully round.
+
+**Numbers get `tabular-nums`.** Any figure that appears in a column — order counts, quantities,
+percentages, durations — so digits stack instead of shimmering.
+
+**`aria-invalid` is the error state.** Every control in the kit takes its error ring from it.
+There is no separate `error` prop to keep in sync, and the accessible state and the visual state
+cannot disagree.
+
+## Working with data-backed components
+
+`StageBadge`, `SiteNav`, `OrdersKanban` and the settings managers read from `useData()`, which in
+the real app is a `useSyncExternalStore` singleton backed by Supabase. Storybook aliases that
+module to `.storybook/mocks/data.ts`, which serves `.storybook/fixtures.ts` instead — so stories
+render offline, with no auth, identically on every run.
+
+Reshape it per story with a `data` parameter:
+
+```tsx
+export const Recoloured: Story = {
+  parameters: {
+    data: {
+      stages: fixtures.stages.map((s) => ({ ...s, color: "rose" })),
+    },
+  },
+};
+```
+
+Anything you leave out falls back to the default fixture.
+
+## Changing a token
+
+Edit `src/app/globals.css`. Both the app and this Storybook read the same file, so the swatches
+on the Colours page update on save and every story re-renders against the new value — which is
+the fastest way to see whether a palette change actually holds up across the product.

@@ -1,0 +1,22 @@
+<!--
+  The app loads IBM Plex via next/font in layout.tsx, which only runs for real
+  routes. Storybook pulls the same faces from Google Fonts and binds them to
+  the variables globals.css expects, so type renders identically here.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root {
+    --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-geist-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  html,
+  body,
+  #storybook-root {
+    height: 100%;
+  }
+</style>
