@@ -19,22 +19,25 @@ export function StatCard({
   value: ReactNode;
   /** Shown as a hover tooltip on a small info glyph next to the label. */
   tooltip?: string;
-  /** Always-visible footnote under the value — for context worth showing outright. */
+  /** Always-visible footnote — sits top-right, opposite the label. */
   caption?: ReactNode;
   trend?: { direction: "up" | "down"; label: string };
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-background p-3", className)}>
-      <div className="flex items-center gap-1 px-1 pb-2 text-[13px] font-normal text-muted-foreground">
-        <span className="truncate">{label}</span>
-        {tooltip && (
-          <span title={tooltip}>
-            <Info className="size-3.5 shrink-0" aria-label={tooltip} />
-          </span>
-        )}
+    <div className={cn("rounded-xl border border-border bg-background p-1.5", className)}>
+      <div className="flex items-center justify-between gap-2 p-2 text-[13px] font-normal text-muted-foreground">
+        <span className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="truncate">{label}</span>
+          {tooltip && (
+            <span title={tooltip}>
+              <Info className="size-3.5 shrink-0" aria-label={tooltip} />
+            </span>
+          )}
+        </span>
+        {caption && <span className="min-w-0 shrink truncate text-right">{caption}</span>}
       </div>
-      <div className="flex items-end justify-between gap-2 rounded-md bg-card px-3 py-2.5">
+      <div className="flex items-end justify-between gap-2 rounded-lg border border-border bg-card p-4">
         <span className="text-[30px] font-semibold leading-none tracking-tight text-foreground">
           {value}
         </span>
@@ -49,7 +52,6 @@ export function StatCard({
           </span>
         )}
       </div>
-      {caption && <p className="px-1 pt-1.5 text-[13px] text-muted-foreground">{caption}</p>}
     </div>
   );
 }

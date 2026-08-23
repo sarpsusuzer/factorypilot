@@ -75,13 +75,13 @@
   --secondary: #f0f0f2;
   --secondary-foreground: #18181b;
   --muted: #f7f7f8;
-  --muted-foreground: #8b8b93;
+  --muted-foreground: #64646c;
   --accent: #eaeaec;
   --accent-foreground: #18181b;
   --destructive: #c22f22;
   --destructive-foreground: #ffffff;
-  --border: #eaeaec;
-  --input: #eaeaec;
+  --border: #d9d9dd;
+  --input: #d9d9dd;
   --ring: #18181b;
   --chart-1: #3b82f6;
   --chart-2: #b4b4bc;
@@ -95,7 +95,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #eaeaec;
   --sidebar-accent-foreground: #18181b;
-  --sidebar-border: #eaeaec;
+  --sidebar-border: #d9d9dd;
   --sidebar-ring: #18181b;
   /* The one deliberate inverse surface — dark tooltips and toasts, regardless
      of the rest of the page's (light-only) theme. */

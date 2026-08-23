@@ -78,8 +78,9 @@ export const LongValues: Story = {
     docs: {
       description: {
         story:
-          "The label truncates rather than wrapping, which keeps a row of cards on one baseline. " +
-          "The value does not truncate — a clipped number is worse than a taller card.",
+          "The label and the caption share one row and both truncate independently, which keeps " +
+          "a row of cards on one baseline no matter how long either string runs. The value never " +
+          "truncates — a clipped number is worse than a taller card.",
       },
     },
   },
@@ -91,7 +92,7 @@ export const LongValues: Story = {
       <StatCard
         label="Ortalama"
         value="12,8 gün"
-        caption="Bu, bir kartın altına sığabilecek uzunlukta bir açıklama satırı."
+        caption="Bu satır etikete komşu hücrede kırpılır."
       />
     </div>
   ),
