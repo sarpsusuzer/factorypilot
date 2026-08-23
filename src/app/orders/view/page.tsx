@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRightLeft, ClipboardList, History, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -11,16 +12,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FieldFileList } from "@/components/field-file-list";
+import { SectionCard } from "@/components/section-card";
 import { StageBadge } from "@/components/stage-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -29,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { useData } from "@/lib/data";
 import {
   asStoredFiles,
@@ -175,131 +169,103 @@ function OrderDetail() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sipariş bilgileri</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
+        <div className="space-y-3">
+          <SectionCard icon={<ClipboardList className="size-4" />} title="Sipariş bilgileri">
+            <div className="space-y-2 text-sm">
               {/* One row per order-level field, in the configured order. */}
               {perOrder.map((field) => (
-                <div key={field.id} className="space-y-4">
-                  <Field label={field.label}>
-                    {field.type === "file" ? (
-                      <FieldFileList files={asStoredFiles(order.field_values?.[field.key] ?? null)} />
-                    ) : (
-                      <span className="whitespace-pre-wrap">
-                        {formatFieldValue(field, order.field_values?.[field.key] ?? null)}
-                      </span>
-                    )}
-                  </Field>
-                  <Separator />
-                </div>
+                <Field key={field.id} label={field.label}>
+                  {field.type === "file" ? (
+                    <FieldFileList files={asStoredFiles(order.field_values?.[field.key] ?? null)} />
+                  ) : (
+                    <span className="whitespace-pre-wrap">
+                      {formatFieldValue(field, order.field_values?.[field.key] ?? null)}
+                    </span>
+                  )}
+                </Field>
               ))}
               {orphanValues.map(([key, value]) => (
-                <div key={key} className="space-y-4">
-                  <Field label={`${key} (artık tanımlı değil)`}>
-                    <span className="whitespace-pre-wrap">
-                      {formatFieldValue(undefined, value)}
-                    </span>
-                  </Field>
-                  <Separator />
-                </div>
+                <Field key={key} label={`${key} (artık tanımlı değil)`}>
+                  <span className="whitespace-pre-wrap">{formatFieldValue(undefined, value)}</span>
+                </Field>
               ))}
               <Field label="Mevcut aşama">{order.current_stage}</Field>
-              <Separator />
               <Field label="Bu aşamaya giriş">
                 {formatDateTime(stageEnteredAt(order, history))}
               </Field>
-              <Separator />
               <Field label="Oluşturulma">{formatDateTime(order.created_at)}</Field>
-              <Separator />
               <Field label="Oluşturan">{order.created_by ? userName(users, order.created_by) : "—"}</Field>
-              {customerCompany && (
-                <>
-                  <Separator />
-                  <Field label="Müşteri">{customerCompany.name}</Field>
-                </>
-              )}
-            </CardContent>
-          </Card>
+              {customerCompany && <Field label="Müşteri">{customerCompany.name}</Field>}
+            </div>
+          </SectionCard>
 
           {perItem.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Kalemler</CardTitle>
-                <CardDescription>
-                  Bu siparişte {items.length} kalem var.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Bu sipariş, kalem özelliği eklenmeden önce oluşturulmuş.
-                  </p>
-                ) : (
-                  <Accordion type="multiple" className="space-y-2">
-                    {items.map((item, index) => {
-                      const fileCount = perItem
-                        .filter((field) => field.type === "file")
-                        .reduce(
-                          (sum, field) => sum + asStoredFiles(item.field_values?.[field.key] ?? null).length,
-                          0,
-                        );
+            <SectionCard
+              icon={<Package className="size-4" />}
+              title="Kalemler"
+              description={`Bu siparişte ${items.length} kalem var.`}
+            >
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Bu sipariş, kalem özelliği eklenmeden önce oluşturulmuş.
+                </p>
+              ) : (
+                <Accordion type="multiple" className="space-y-2">
+                  {items.map((item, index) => {
+                    const fileCount = perItem
+                      .filter((field) => field.type === "file")
+                      .reduce(
+                        (sum, field) => sum + asStoredFiles(item.field_values?.[field.key] ?? null).length,
+                        0,
+                      );
 
-                      return (
-                        <AccordionItem
-                          key={item.id}
-                          value={item.id}
-                          className="rounded-md border px-3 last:border-b"
-                        >
-                          <AccordionTrigger className="py-3 hover:no-underline">
-                            <span className="flex flex-1 items-center gap-2 text-left text-sm">
-                              <span className="text-muted-foreground">#{index + 1}</span>
-                              <span className="font-medium">{itemTitle(item, perItem, index)}</span>
-                              {fileCount > 0 && (
-                                <span className="ml-auto mr-2 text-xs text-muted-foreground">
-                                  {fileCount} dosya
+                    return (
+                      <AccordionItem
+                        key={item.id}
+                        value={item.id}
+                        className="rounded-md border border-border bg-background px-3 last:border-b"
+                      >
+                        <AccordionTrigger className="py-3 hover:no-underline">
+                          <span className="flex flex-1 items-center gap-2 text-left text-sm">
+                            <span className="text-muted-foreground">#{index + 1}</span>
+                            <span className="font-medium">{itemTitle(item, perItem, index)}</span>
+                            {fileCount > 0 && (
+                              <span className="ml-auto mr-2 text-xs text-muted-foreground">
+                                {fileCount} dosya
+                              </span>
+                            )}
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-2 pb-3 text-sm">
+                          {perItem.map((field) => (
+                            <Field key={field.id} label={field.label}>
+                              {field.type === "file" ? (
+                                <FieldFileList
+                                  files={asStoredFiles(item.field_values?.[field.key] ?? null)}
+                                />
+                              ) : (
+                                <span className="whitespace-pre-wrap">
+                                  {formatFieldValue(field, item.field_values?.[field.key] ?? null)}
                                 </span>
                               )}
-                            </span>
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-3 pb-4 text-sm">
-                            {perItem.map((field) => (
-                              <div key={field.id} className="grid gap-1">
-                                <span className="text-xs tracking-wide text-muted-foreground uppercase">
-                                  {field.label}
-                                </span>
-                                {field.type === "file" ? (
-                                  <FieldFileList
-                                    files={asStoredFiles(item.field_values?.[field.key] ?? null)}
-                                  />
-                                ) : (
-                                  <span className="whitespace-pre-wrap">
-                                    {formatFieldValue(field, item.field_values?.[field.key] ?? null)}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </AccordionContent>
-                        </AccordionItem>
-                      );
-                    })}
-                  </Accordion>
-                )}
-              </CardContent>
-            </Card>
+                            </Field>
+                          ))}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              )}
+            </SectionCard>
           )}
 
           {canMoveStage && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Aşama değiştir</CardTitle>
-                <CardDescription>
-                  Her aşamaya geçilebilir — önceki bir aşamaya geri almak dahil.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <SectionCard
+              icon={<ArrowRightLeft className="size-4" />}
+              title="Aşama değiştir"
+              description="Her aşamaya geçilebilir — önceki bir aşamaya geri almak dahil."
+            >
+              <div className="space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="target-stage">Şu aşamaya taşı</Label>
                   <Select value={targetStage} onValueChange={setTargetStage}>
@@ -321,34 +287,32 @@ function OrderDetail() {
                   </Select>
                 </div>
                 <Button onClick={handleMove}>Siparişi taşı</Button>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
           )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Aşama geçmişi</CardTitle>
-            <CardDescription>Her aşama değişikliğinde otomatik kaydedilir.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ol className="space-y-4">
-              {entries.map((entry) => (
-                <li key={entry.id} className="border-l-2 pl-4 text-sm">
-                  <p className="font-medium">
-                    {entry.from_stage
-                      ? `${entry.from_stage} → ${entry.to_stage}`
-                      : `${entry.to_stage} aşamasında oluşturuldu`}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {entry.changed_by ? userName(users, entry.changed_by) : "Bilinmiyor"} ·{" "}
-                    {formatDateTime(entry.changed_at)}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
+        <SectionCard
+          icon={<History className="size-4" />}
+          title="Aşama geçmişi"
+          description="Her aşama değişikliğinde otomatik kaydedilir."
+        >
+          <ol className="space-y-4">
+            {entries.map((entry) => (
+              <li key={entry.id} className="border-l-2 border-border pl-4 text-sm">
+                <p className="font-medium">
+                  {entry.from_stage
+                    ? `${entry.from_stage} → ${entry.to_stage}`
+                    : `${entry.to_stage} aşamasında oluşturuldu`}
+                </p>
+                <p className="text-muted-foreground">
+                  {entry.changed_by ? userName(users, entry.changed_by) : "Bilinmiyor"} ·{" "}
+                  {formatDateTime(entry.changed_at)}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </SectionCard>
       </div>
     </div>
   );
@@ -356,9 +320,9 @@ function OrderDetail() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1">
+    <div className="rounded-md bg-background px-3 py-2">
       <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span>{children}</span>
+      <div className="mt-0.5 text-foreground">{children}</div>
     </div>
   );
 }

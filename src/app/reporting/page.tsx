@@ -1,17 +1,13 @@
 "use client";
 
-import { Calendar, Check, ChevronDown } from "lucide-react";
+import { BarChart3, Calendar, Check, ChevronDown, Clock, LayoutGrid, PieChart, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
+import { ListRow } from "@/components/list-row";
 import { OrderStatusBar } from "@/components/order-status-bar";
+import { SectionCard } from "@/components/section-card";
 import { StageBadge } from "@/components/stage-badge";
+import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,127 +227,103 @@ export default function ReportingPage() {
         </DropdownMenu>
       </div>
 
-      <Card>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatBlock label="Toplam sipariş" value={periodOrders.length} caption={periodLabel} />
-          <StatBlock
-            label="Aktif sipariş"
-            value={activeCount}
-            caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
-          />
-          <StatBlock
-            label="Geciken"
-            value={overdue.length}
-            caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla (şimdi)`}
-          />
-          <StatBlock
-            label="Ort. tamamlanma"
-            value={cycleTime.averageMs !== null ? formatDuration(cycleTime.averageMs) : "—"}
-            caption={
-              lastStage
-                ? `Oluşturmadan “${lastStage}”a kadar (${cycleTime.sampleSize} sipariş)`
-                : "Aşama tanımlı değil"
-            }
-          />
-        </CardContent>
-      </Card>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Toplam sipariş" value={periodOrders.length} caption={periodLabel} />
+        <StatCard
+          label="Aktif sipariş"
+          value={activeCount}
+          caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
+        />
+        <StatCard
+          label="Geciken"
+          value={overdue.length}
+          caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla (şimdi)`}
+        />
+        <StatCard
+          label="Ort. tamamlanma"
+          value={cycleTime.averageMs !== null ? formatDuration(cycleTime.averageMs) : "—"}
+          caption={
+            lastStage
+              ? `Oluşturmadan “${lastStage}”a kadar (${cycleTime.sampleSize} sipariş)`
+              : "Aşama tanımlı değil"
+          }
+        />
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Sipariş durumları</CardTitle>
-          <CardDescription>{periodLabel} — aşamalara göre dağılım.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <OrderStatusBar orders={periodOrders} stages={stages} />
-        </CardContent>
-      </Card>
+      <SectionCard
+        icon={<PieChart className="size-4" />}
+        title="Sipariş durumları"
+        description={`${periodLabel} — aşamalara göre dağılım.`}
+      >
+        <OrderStatusBar orders={periodOrders} stages={stages} />
+      </SectionCard>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sipariş yoğunluğu tarihçesi</CardTitle>
-            <CardDescription>{periodLabel} — oluşturulan sipariş sayısı, güne göre.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {periodOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Bu dönemde sipariş yok.</p>
-            ) : (
-              <OrderVolumeChart series={dailyVolume} />
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <SectionCard
+          icon={<TrendingUp className="size-4" />}
+          title="Sipariş yoğunluğu tarihçesi"
+          description={`${periodLabel} — oluşturulan sipariş sayısı, güne göre.`}
+        >
+          {periodOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Bu dönemde sipariş yok.</p>
+          ) : (
+            <OrderVolumeChart series={dailyVolume} />
+          )}
+        </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Aşama başına ortalama süre</CardTitle>
-            <CardDescription>
+        <SectionCard
+          icon={<Clock className="size-4" />}
+          title="Aşama başına ortalama süre"
+          description={
+            <>
               Siparişlerin çıkmış olduğu aşamalara göre hesaplanır. Siparişin hâlâ beklediği aşama
               henüz sayılmaz.
               {slowest && slowest.averageMs !== null
                 ? ` En yavaş aşama: ${slowest.stage.name} (${formatDuration(slowest.averageMs)}).`
                 : ""}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {ranked.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Henüz tamamlanmış bir aşama geçişi yok.
-              </p>
-            ) : (
-              <StageDurationChart entries={ranked} />
-            )}
-          </CardContent>
-        </Card>
+            </>
+          }
+        >
+          {ranked.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Henüz tamamlanmış bir aşama geçişi yok.
+            </p>
+          ) : (
+            <StageDurationChart entries={ranked} />
+          )}
+        </SectionCard>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Aşama dağılımı</CardTitle>
-          <CardDescription>
-            Her aşamaya bugüne kadar uğramış sipariş sayısının payı. Sipariş geri adım atabildiği
-            için bir siparişin birden fazla aşamaya katkısı olabilir.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {periodOrders.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Bu dönemde sipariş yok.</p>
-          ) : (
-            <StagePie entries={reach} />
-          )}
-        </CardContent>
-      </Card>
+      <SectionCard
+        icon={<LayoutGrid className="size-4" />}
+        title="Aşama dağılımı"
+        description="Her aşamaya bugüne kadar uğramış sipariş sayısının payı. Sipariş geri adım atabildiği için bir siparişin birden fazla aşamaya katkısı olabilir."
+      >
+        {periodOrders.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Bu dönemde sipariş yok.</p>
+        ) : (
+          <StagePie entries={reach} />
+        )}
+      </SectionCard>
 
       {breakdowns.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {breakdowns.map(({ field, entries }) => (
-            <Card key={field.id}>
-              <CardHeader>
-                <CardTitle>{field.label}</CardTitle>
-                <CardDescription>
-                  {field.scope === "item" ? "Kalemlere göre dağılım." : "Siparişlere göre dağılım."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {entries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Henüz bu alan için veri yok.</p>
-                ) : (
-                  <FieldDistributionBar entries={entries} />
-                )}
-              </CardContent>
-            </Card>
+            <SectionCard
+              key={field.id}
+              icon={<BarChart3 className="size-4" />}
+              title={field.label}
+              description={field.scope === "item" ? "Kalemlere göre dağılım." : "Siparişlere göre dağılım."}
+            >
+              {entries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Henüz bu alan için veri yok.</p>
+              ) : (
+                <FieldDistributionBar entries={entries} />
+              )}
+            </SectionCard>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function StatBlock({ label, value, caption }: { label: string; value: number | string; caption: string }) {
-  return (
-    <div className="space-y-1">
-      <CardDescription className="text-xs tracking-widest uppercase">{label}</CardDescription>
-      <CardTitle className="text-4xl font-semibold">{value}</CardTitle>
-      <p className="text-sm text-muted-foreground">{caption}</p>
     </div>
   );
 }
@@ -449,17 +421,16 @@ function StagePie({ entries }: { entries: ReturnType<typeof stageReachCounts> })
           />
         ))}
       </svg>
-      <ol className="w-full flex-1 space-y-2">
+      <div className="w-full flex-1 space-y-0.5">
         {entries.map((entry) => (
-          <li key={entry.stage.id} className="flex items-center justify-between gap-2 text-sm">
-            <StageBadge stage={entry.stage.name} />
-            <span className="text-right text-muted-foreground">
-              <span className="font-medium tabular-nums text-foreground">{entry.count}</span> sipariş{" "}
-              <span className="text-xs">(%{Math.round(entry.share * 100)})</span>
-            </span>
-          </li>
+          <ListRow
+            key={entry.stage.id}
+            label={<StageBadge stage={entry.stage.name} />}
+            value={`${entry.count} sipariş`}
+            meta={`%${Math.round(entry.share * 100)}`}
+          />
         ))}
-      </ol>
+      </div>
     </div>
   );
 }

@@ -1,13 +1,8 @@
 "use client";
 
+import { Users2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -48,12 +43,11 @@ export default function AdminUsersPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Kullanıcılar</CardTitle>
-          <CardDescription>{loaded ? `${companyUsers.length} kullanıcı` : "Yükleniyor…"}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <SectionCard
+        icon={<Users2 className="size-4" />}
+        title="Kullanıcılar"
+        description={loaded ? `${companyUsers.length} kullanıcı` : "Yükleniyor…"}
+      >
           <Table>
             <TableHeader>
               <TableRow>
@@ -92,8 +86,7 @@ export default function AdminUsersPage() {
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+      </SectionCard>
     </div>
   );
 }

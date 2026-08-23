@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ClipboardList, LineChart, ShieldCheck, Users2 } from "lucide-react";
+import { Building2, ClipboardList, Gauge, LineChart, ShieldCheck, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
@@ -16,6 +16,7 @@ const LINKS: {
   permission?: Permission;
 }[] = [
   { href: "/", label: "Siparişler", icon: ClipboardList },
+  { href: "/overview", label: "Overview", icon: Gauge },
   { href: "/reporting", label: "Raporlar", icon: LineChart, permission: "view_reporting" },
   { href: "/roles", label: "Roller", icon: ShieldCheck, permission: "manage_roles" },
   { href: "/users", label: "Kullanıcılar", icon: Users2, permission: "manage_roles" },
@@ -61,7 +62,7 @@ export function SiteNav() {
   }
 
   return (
-    <header className="h-14 flex-none bg-background shadow-[0_1px_0_rgba(16,18,22,.05)]">
+    <header className="h-14 flex-none border-b border-border bg-background">
       <div className="mx-auto flex h-full w-full max-w-6xl items-center gap-3.5 px-4.5">
         {brand}
         <nav className="flex h-full flex-1 items-center gap-1">

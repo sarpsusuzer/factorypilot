@@ -1,15 +1,10 @@
 "use client";
 
+import { Link2, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -78,15 +73,12 @@ export default function AdminMatchesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-        <Card>
-          <CardHeader>
-            <CardTitle>Eşleştirmeler</CardTitle>
-            <CardDescription>
-              {loaded ? `${companyMatches.length} eşleştirme` : "Yükleniyor…"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        <SectionCard
+          icon={<Link2 className="size-4" />}
+          title="Eşleştirmeler"
+          description={loaded ? `${companyMatches.length} eşleştirme` : "Yükleniyor…"}
+        >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -121,15 +113,13 @@ export default function AdminMatchesPage() {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+        </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Eşleştirme ekle</CardTitle>
-            <CardDescription>Bir üretici ve bir müşteri seçin.</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <SectionCard
+          icon={<Plus className="size-4" />}
+          title="Eşleştirme ekle"
+          description="Bir üretici ve bir müşteri seçin."
+        >
             <form onSubmit={handleCreate} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="match-uretici">Üretici</Label>
@@ -163,8 +153,7 @@ export default function AdminMatchesPage() {
               </div>
               <Button type="submit">Eşleştirme ekle</Button>
             </form>
-          </CardContent>
-        </Card>
+        </SectionCard>
       </div>
     </div>
   );

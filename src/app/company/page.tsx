@@ -1,20 +1,15 @@
 "use client";
 
+import { Clock, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FieldsManager } from "@/components/fields-manager";
+import { SectionCard } from "@/components/section-card";
 import { StageBadge } from "@/components/stage-badge";
 import { StagesManager } from "@/components/stages-manager";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -109,19 +104,19 @@ function CompanyPageContent() {
         </TabsList>
 
         <TabsContent value="genel" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{company?.name ?? "Yükleniyor…"}</CardTitle>
-              <CardDescription>Şirket logosu</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center gap-6">
-              <div className="flex size-20 items-center justify-center rounded-lg border bg-muted">
+          <SectionCard
+            icon={<ImageIcon className="size-4" />}
+            title={company?.name ?? "Yükleniyor…"}
+            description="Şirket logosu"
+          >
+            <div className="flex items-center gap-6">
+              <div className="flex size-20 items-center justify-center rounded-md border border-border bg-background">
                 {company?.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={company.logo_url}
                     alt=""
-                    className="size-full rounded-lg object-contain p-2"
+                    className="size-full rounded-md object-contain p-2"
                   />
                 ) : (
                   <span className="text-xs text-muted-foreground">Logo yok</span>
@@ -146,17 +141,15 @@ function CompanyPageContent() {
                 </Button>
                 <p className="text-xs text-muted-foreground">PNG, JPG veya SVG.</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Geciken siparişler</CardTitle>
-              <CardDescription>
-                Bulundukları aşamada eşik süreden uzun bekleyen siparişler.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <SectionCard
+            icon={<Clock className="size-4" />}
+            title="Geciken siparişler"
+            description="Bulundukları aşamada eşik süreden uzun bekleyen siparişler."
+          >
+            <div className="space-y-4">
               <div className="grid max-w-64 gap-2">
                 <Label htmlFor="threshold">Kaç gün sonra gecikmiş sayılsın</Label>
                 <Input
@@ -206,8 +199,8 @@ function CompanyPageContent() {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         </TabsContent>
 
         {canManageFields && (

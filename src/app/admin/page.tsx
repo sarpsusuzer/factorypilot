@@ -1,15 +1,10 @@
 "use client";
 
+import { Building2, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -165,13 +160,12 @@ export default function AdminCompaniesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-        <Card>
-          <CardHeader>
-            <CardTitle>Şirketler</CardTitle>
-            <CardDescription>{loaded ? `${companies.length} şirket` : "Yükleniyor…"}</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        <SectionCard
+          icon={<Building2 className="size-4" />}
+          title="Şirketler"
+          description={loaded ? `${companies.length} şirket` : "Yükleniyor…"}
+        >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -276,17 +270,13 @@ export default function AdminCompaniesPage() {
                 })}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+        </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Şirket ekle</CardTitle>
-            <CardDescription>
-              Şirket için varsayılan aşamalar ve sipariş alanları otomatik oluşturulur.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <SectionCard
+          icon={<Plus className="size-4" />}
+          title="Şirket ekle"
+          description="Şirket için varsayılan aşamalar ve sipariş alanları otomatik oluşturulur."
+        >
             <form onSubmit={handleCreate} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="company-name">Şirket adı</Label>
@@ -343,8 +333,7 @@ export default function AdminCompaniesPage() {
               </div>
               <Button type="submit">Şirketi ekle</Button>
             </form>
-          </CardContent>
-        </Card>
+        </SectionCard>
       </div>
 
       <Dialog

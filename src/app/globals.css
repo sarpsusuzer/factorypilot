@@ -40,6 +40,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-inverse-muted-foreground: var(--inverse-muted-foreground);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-inverse: var(--inverse);
   /* FactoryPilot design system — fixed radius scale (px, not derived). */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -49,49 +52,56 @@
   --radius-2xl: 20px;
   --radius-3xl: 20px;
   --radius-4xl: 999px;
-  /* FactoryPilot design system — elevation (soft ambient shadows over borders). */
-  --shadow-xs: 0 1px 2px rgba(16, 18, 22, 0.04);
-  --shadow-sm: 0 1px 3px rgba(16, 18, 22, 0.06), 0 1px 1px rgba(16, 18, 22, 0.03);
-  --shadow-md: 0 6px 18px -6px rgba(16, 18, 22, 0.12), 0 2px 6px -2px rgba(16, 18, 22, 0.06);
-  --shadow-lg: 0 16px 40px -12px rgba(16, 18, 22, 0.18), 0 4px 12px -6px rgba(16, 18, 22, 0.08);
-  --shadow-panel: 0 0 0 1px rgba(16, 18, 22, 0.07), 0 1px 2px rgba(16, 18, 22, 0.03);
+  /* FactoryPilot design system — no drop shadows anywhere; depth comes only
+     from fill contrast + hairline borders. Zeroed out (rather than removed)
+     so any stray shadow-* utility class stays a no-op. */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-panel: none;
 }
 
 :root {
-  /* FactoryPilot design system — light-mode, monochrome-ink palette. */
+  /* FactoryPilot design system — light-mode palette. */
   --background: #ffffff;
-  --foreground: #1b1f26;
-  --card: #ffffff;
-  --card-foreground: #1b1f26;
+  --foreground: #18181b;
+  --card: #f7f7f8;
+  --card-foreground: #18181b;
   --popover: #ffffff;
-  --popover-foreground: #1b1f26;
-  --primary: #1b1f26;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
   --primary-foreground: #ffffff;
-  --secondary: #edeef1;
-  --secondary-foreground: #1b1f26;
-  --muted: #f4f5f7;
-  --muted-foreground: #565c68;
-  --accent: #e4e6eb;
-  --accent-foreground: #1b1f26;
+  --secondary: #f0f0f2;
+  --secondary-foreground: #18181b;
+  --muted: #f7f7f8;
+  --muted-foreground: #8b8b93;
+  --accent: #eaeaec;
+  --accent-foreground: #18181b;
   --destructive: #c22f22;
   --destructive-foreground: #ffffff;
-  --border: rgba(16, 18, 22, 0.14);
-  --input: rgba(16, 18, 22, 0.18);
-  --ring: #1b1f26;
-  --chart-1: #1b1f26;
-  --chart-2: #0e7a71;
-  --chart-3: #b4680a;
-  --chart-4: #6d4fcc;
-  --chart-5: #b4b9c2;
-  --radius: 0.625rem;
-  --sidebar: #f4f5f7;
-  --sidebar-foreground: #1b1f26;
-  --sidebar-primary: #1b1f26;
+  --border: #eaeaec;
+  --input: #eaeaec;
+  --ring: #18181b;
+  --chart-1: #3b82f6;
+  --chart-2: #b4b4bc;
+  --chart-3: #8b8b93;
+  --chart-4: #18181b;
+  --chart-5: #eaeaec;
+  --radius: 10px;
+  --sidebar: #f7f7f8;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e4e6eb;
-  --sidebar-accent-foreground: #1b1f26;
-  --sidebar-border: rgba(16, 18, 22, 0.14);
-  --sidebar-ring: #1b1f26;
+  --sidebar-accent: #eaeaec;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #eaeaec;
+  --sidebar-ring: #18181b;
+  /* The one deliberate inverse surface — dark tooltips and toasts, regardless
+     of the rest of the page's (light-only) theme. */
+  --inverse: #1f1f23;
+  --inverse-foreground: #ffffff;
+  --inverse-muted-foreground: #b4b4bc;
 }
 
 .dark {

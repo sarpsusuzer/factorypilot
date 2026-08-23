@@ -1,17 +1,12 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { ListChecks, Plus, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionCard } from "@/components/section-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -147,21 +142,20 @@ export function FieldsManager() {
         doldurulur; kalem kapsamındaki alanlar her kalem için tekrarlanır.
       </p>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-        <Card>
-          <CardHeader>
-            <CardTitle>Alanlar</CardTitle>
-            <CardDescription>{loaded ? `${fields.length} alan` : "Yükleniyor…"}</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+        <SectionCard
+          icon={<ListChecks className="size-4" />}
+          title="Alanlar"
+          description={loaded ? `${fields.length} alan` : "Yükleniyor…"}
+        >
             {fields.length === 0 ? (
               <p className="py-10 text-center text-muted-foreground">
                 Henüz alan yok — sağdan ilkini ekleyin.
               </p>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-2">
                 {fields.map((field, index) => (
-                  <Card key={field.id} className="gap-3 py-4">
+                  <Card key={field.id} className="gap-3 border-border bg-background py-4">
                     <CardHeader className="px-4">
                       <div className="flex items-start justify-between gap-2">
                         <span className="flex items-center gap-2 font-medium">
@@ -233,25 +227,20 @@ export function FieldsManager() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+        </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Alan ekle</CardTitle>
-            <CardDescription>
-              Değerler bu anahtar altında saklanır. Etiketten otomatik doldurulur.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAdd} className="grid gap-4">
-              <FieldForm form={form} setForm={setForm} singleColumn />
-              <div>
-                <Button type="submit">Alanı ekle</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <SectionCard
+          icon={<Plus className="size-4" />}
+          title="Alan ekle"
+          description="Değerler bu anahtar altında saklanır. Etiketten otomatik doldurulur."
+        >
+          <form onSubmit={handleAdd} className="grid gap-4">
+            <FieldForm form={form} setForm={setForm} singleColumn />
+            <div>
+              <Button type="submit">Alanı ekle</Button>
+            </div>
+          </form>
+        </SectionCard>
       </div>
 
       <Dialog

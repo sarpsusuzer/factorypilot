@@ -1,13 +1,14 @@
 "use client";
 
-import { Check, ChevronDown, Eye, Kanban, Layers, List, Search, TriangleAlert, User } from "lucide-react";
+import { Check, ChevronDown, Eye, Kanban, Layers, List, PieChart, Search, TriangleAlert, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { OrderStatusBar } from "@/components/order-status-bar";
 import { OrdersKanban } from "@/components/orders-kanban";
+import { SectionCard } from "@/components/section-card";
 import { StageBadge } from "@/components/stage-badge";
+import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -178,31 +179,27 @@ export default function OrdersPage() {
         )}
       </div>
 
-      <Card>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatBlock label="Toplam sipariş" value={orders.length} caption="Tüm zamanlar" />
-            <StatBlock
-              label="Aktif sipariş"
-              value={activeCount}
-              caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
-            />
-            <StatBlock
-              label="Geciken"
-              value={overdueCount}
-              caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla`}
-            />
-          </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatCard label="Toplam sipariş" value={orders.length} caption="Tüm zamanlar" />
+        <StatCard
+          label="Aktif sipariş"
+          value={activeCount}
+          caption={lastStage ? `Henüz “${lastStage}” değil` : "—"}
+        />
+        <StatCard
+          label="Geciken"
+          value={overdueCount}
+          caption={`Bir aşamada ${settings.overdue_threshold_days} günden fazla`}
+        />
+      </div>
 
-          <div className="space-y-3 border-t pt-6">
-            <div>
-              <p className="text-sm font-medium">Sipariş durumları</p>
-              <p className="text-sm text-muted-foreground">Tüm siparişlerin aşamalara göre dağılımı.</p>
-            </div>
-            <OrderStatusBar orders={orders} stages={stages} />
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard
+        icon={<PieChart className="size-4" />}
+        title="Sipariş durumları"
+        description="Tüm siparişlerin aşamalara göre dağılımı."
+      >
+        <OrderStatusBar orders={orders} stages={stages} />
+      </SectionCard>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -334,7 +331,7 @@ export default function OrdersPage() {
       )}
 
       {view === "table" && (
-      <div className="rounded-lg border bg-background">
+      <div className="rounded-xl border border-border bg-background">
         <Table>
           <TableHeader>
             <TableRow className="text-xs tracking-wide text-muted-foreground uppercase">
@@ -470,8 +467,8 @@ function ViewButton({
       className={cn(
         "flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-sm font-medium transition-colors",
         active
-          ? "bg-background text-foreground shadow-xs"
-          : "text-muted-foreground hover:bg-white/70 hover:text-foreground",
+          ? "border border-border bg-background text-foreground"
+          : "border border-transparent text-muted-foreground hover:bg-white/70 hover:text-foreground",
       )}
     >
       {icon}
@@ -480,15 +477,6 @@ function ViewButton({
   );
 }
 
-function StatBlock({ label, value, caption }: { label: string; value: number; caption: string }) {
-  return (
-    <div className="space-y-1">
-      <CardDescription className="text-xs tracking-widest uppercase">{label}</CardDescription>
-      <CardTitle className="text-4xl font-semibold">{value}</CardTitle>
-      <p className="text-sm text-muted-foreground">{caption}</p>
-    </div>
-  );
-}
 
 function StageTab({ value, label, count }: { value: string; label: string; count: number }) {
   return (

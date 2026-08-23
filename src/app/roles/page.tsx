@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -8,17 +9,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { SectionCard } from "@/components/section-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -111,22 +105,20 @@ export default function RolesPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Roller</CardTitle>
-          <CardDescription>{loaded ? `${roles.length} rol` : "Yükleniyor…"}</CardDescription>
-          <CardAction>
-            <Button onClick={() => setAddOpen(true)}>Rol ekle</Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <SectionCard
+        icon={<ShieldCheck className="size-4" />}
+        title="Roller"
+        description={loaded ? `${roles.length} rol` : "Yükleniyor…"}
+        action={<Button onClick={() => setAddOpen(true)}>Rol ekle</Button>}
+      >
+        <div className="space-y-2">
           {roles.map((role) => {
             const roleUsers = users.filter((user) => user.role_id === role.id);
 
             return (
-              <Card key={role.id} size="sm">
+              <div key={role.id} className="rounded-md border border-border bg-background p-3">
                 <Accordion type="single" collapsible>
-                  <AccordionItem value={role.id} className="border-b-0 px-(--card-spacing)">
+                  <AccordionItem value={role.id} className="border-b-0">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <AccordionTrigger hideIcon className="w-full py-1 hover:no-underline">
@@ -179,11 +171,11 @@ export default function RolesPage() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-              </Card>
+              </div>
             );
           })}
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
       <Dialog
         open={addOpen}
@@ -280,7 +272,7 @@ function PermissionPicker({
   return (
     <div className="grid gap-2">
       <Label>Yetkiler</Label>
-      <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
+      <div className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2">
         {PERMISSIONS.map((permission) => (
           <label key={permission.key} className="flex items-start gap-2 text-sm">
             <Checkbox

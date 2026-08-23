@@ -176,7 +176,7 @@ export function OrdersKanban({
                                 setOverStage(null);
                               }}
                               title={cardCanMove ? undefined : "Başka bir şirketin siparişi — taşınamaz"}
-                              className={`space-y-1.5 rounded-md bg-card p-2.5 shadow-xs transition-[opacity,box-shadow] select-none hover:shadow-sm ${
+                              className={`space-y-1.5 rounded-md border border-border bg-card p-2.5 transition-colors select-none hover:border-ring/40 ${
                                 cardCanMove ? "cursor-grab active:cursor-grabbing" : ""
                               } ${draggingId === order.id ? "opacity-40" : ""}`}
                             >

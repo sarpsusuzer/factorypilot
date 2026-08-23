@@ -1,15 +1,10 @@
 "use client";
 
+import { UserPlus, Users2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -126,12 +121,11 @@ export default function UsersPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Kullanıcılar</CardTitle>
-          <CardDescription>{loaded ? `${users.length} kullanıcı` : "Yükleniyor…"}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <SectionCard
+        icon={<Users2 className="size-4" />}
+        title="Kullanıcılar"
+        description={loaded ? `${users.length} kullanıcı` : "Yükleniyor…"}
+      >
           <Table>
             <TableHeader>
               <TableRow>
@@ -257,58 +251,59 @@ export default function UsersPage() {
               })}
             </TableBody>
           </Table>
+      </SectionCard>
 
-          <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 border-t pt-6 mt-6">
-            <div className="grid min-w-48 flex-1 gap-2">
-              <Label htmlFor="new-user">Ad soyad</Label>
-              <Input
-                id="new-user"
-                value={newName}
-                onChange={(event) => setNewName(event.target.value)}
-                placeholder="Ad soyad"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid min-w-48 flex-1 gap-2">
-              <Label htmlFor="new-user-email">E-posta</Label>
-              <Input
-                id="new-user-email"
-                type="email"
-                value={newEmail}
-                onChange={(event) => setNewEmail(event.target.value)}
-                placeholder="ad@sirket.com"
-                autoComplete="off"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="new-user-password">Şifre</Label>
-              <Input
-                id="new-user-password"
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="new-user-role">Rol</Label>
-              <Select value={newRoleId || roles[0]?.id} onValueChange={setNewRoleId}>
-                <SelectTrigger id="new-user-role" className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit">Kullanıcıyı ekle</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <SectionCard icon={<UserPlus className="size-4" />} title="Kullanıcı ekle">
+        <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
+          <div className="grid min-w-48 flex-1 gap-2">
+            <Label htmlFor="new-user">Ad soyad</Label>
+            <Input
+              id="new-user"
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="Ad soyad"
+              autoComplete="off"
+            />
+          </div>
+          <div className="grid min-w-48 flex-1 gap-2">
+            <Label htmlFor="new-user-email">E-posta</Label>
+            <Input
+              id="new-user-email"
+              type="email"
+              value={newEmail}
+              onChange={(event) => setNewEmail(event.target.value)}
+              placeholder="ad@sirket.com"
+              autoComplete="off"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="new-user-password">Şifre</Label>
+            <Input
+              id="new-user-password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="new-user-role">Rol</Label>
+            <Select value={newRoleId || roles[0]?.id} onValueChange={setNewRoleId}>
+              <SelectTrigger id="new-user-role" className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit">Kullanıcıyı ekle</Button>
+        </form>
+      </SectionCard>
     </div>
   );
 }

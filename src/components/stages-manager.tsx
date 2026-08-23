@@ -1,16 +1,10 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Layers, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,12 +90,11 @@ export function StagesManager() {
         taşınabilir.
       </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Aşamalar</CardTitle>
-          <CardDescription>{loaded ? `${stages.length} aşama` : "Yükleniyor…"}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <SectionCard
+        icon={<Layers className="size-4" />}
+        title="Aşamalar"
+        description={loaded ? `${stages.length} aşama` : "Yükleniyor…"}
+      >
           <Table>
             <TableHeader>
               <TableRow>
@@ -210,22 +203,23 @@ export function StagesManager() {
               })}
             </TableBody>
           </Table>
+      </SectionCard>
 
-          <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 border-t pt-6">
-            <div className="grid min-w-64 flex-1 gap-2">
-              <Label htmlFor="new-stage">Aşama ekle</Label>
-              <Input
-                id="new-stage"
-                value={newStage}
-                onChange={(event) => setNewStage(event.target.value)}
-                placeholder="örn. Paketleme"
-                autoComplete="off"
-              />
-            </div>
-            <Button type="submit">Aşamayı ekle</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <SectionCard icon={<Plus className="size-4" />} title="Aşama ekle">
+        <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
+          <div className="grid min-w-64 flex-1 gap-2">
+            <Label htmlFor="new-stage">Aşama ekle</Label>
+            <Input
+              id="new-stage"
+              value={newStage}
+              onChange={(event) => setNewStage(event.target.value)}
+              placeholder="örn. Paketleme"
+              autoComplete="off"
+            />
+          </div>
+          <Button type="submit">Aşamayı ekle</Button>
+        </form>
+      </SectionCard>
     </div>
   );
 }

@@ -1,19 +1,13 @@
 "use client";
 
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Copy, Factory, Package, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { FieldInput } from "@/components/field-input";
+import { SectionCard } from "@/components/section-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -216,12 +210,12 @@ export default function NewOrderPage() {
 
       <div className="space-y-6">
         {isMusteri && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Üretici</CardTitle>
-              <CardDescription>Bu sipariş hangi üretici için oluşturuluyor?</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:max-w-sm">
+          <SectionCard
+            icon={<Factory className="size-4" />}
+            title="Üretici"
+            description="Bu sipariş hangi üretici için oluşturuluyor?"
+          >
+            <div className="grid gap-2 sm:max-w-sm">
               <Label htmlFor="uretici-select">Üretici</Label>
               <Select value={ureticiId} onValueChange={handleUreticiChange}>
                 <SelectTrigger id="uretici-select" className="w-full">
@@ -235,17 +229,17 @@ export default function NewOrderPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         )}
 
         {perOrder.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sipariş bilgileri</CardTitle>
-              <CardDescription>Sipariş için bir kez doldurulur.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+          <SectionCard
+            icon={<ClipboardList className="size-4" />}
+            title="Sipariş bilgileri"
+            description="Sipariş için bir kez doldurulur."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
               {perOrder.map((field) => (
                 <div
                   key={field.id}
@@ -259,8 +253,8 @@ export default function NewOrderPage() {
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         )}
 
         {perItem.length > 0 ? (
@@ -279,9 +273,11 @@ export default function NewOrderPage() {
             </div>
 
             {drafts.map((item, index) => (
-              <Card key={item.id}>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Kalem {index + 1}</CardTitle>
+              <SectionCard
+                key={item.id}
+                icon={<Package className="size-4" />}
+                title={`Kalem ${index + 1}`}
+                action={
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -305,8 +301,9 @@ export default function NewOrderPage() {
                       Sil
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
+                }
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
                   {perItem.map((field) => (
                     <div
                       key={field.id}
@@ -320,8 +317,8 @@ export default function NewOrderPage() {
                       />
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </SectionCard>
             ))}
 
             <Button type="button" variant="outline" className="w-full" onClick={() => addItem()}>

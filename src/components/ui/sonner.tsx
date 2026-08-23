@@ -32,10 +32,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
         {
           // Toasts stay dark regardless of surface theme — the one deliberate
           // inverse surface in the design system, alongside tooltips.
-          "--normal-bg": "#1b1f26",
+          "--normal-bg": "#1F1F23",
           "--normal-text": "#ffffff",
           "--normal-border": "transparent",
-          "--border-radius": "14px",
+          "--border-radius": "16px",
         } as React.CSSProperties
       }
       toastOptions={{
