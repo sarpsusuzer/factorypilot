@@ -215,9 +215,8 @@ export async function createOrder(
   const perOrder = orderFields(targetFields);
   const perItem = itemFields(targetFields);
 
-  const order = {
+  const baseOrder = {
     id: newId(),
-    order_no: nextOrderNo(targetOrders),
     current_stage: firstStage.name,
     created_at: new Date().toISOString(),
     created_by: userId,
@@ -233,8 +232,33 @@ export async function createOrder(
     customer_company_id: ureticiCompanyId ? ownCompanyId : null,
   };
 
-  const { data: inserted, error } = await supabase.from("orders").insert(order).select().single();
-  if (error) return { ok: false, error: error.message };
+  // A müşteri's snapshot only contains orders it's allowed to see (its own,
+  // as customer) — an üretici's own orders (customer_company_id null) are
+  // invisible to it, so `nextOrderNo` can compute a number that's already
+  // taken. Retry past the DB's unique constraint rather than pre-computing
+  // a number we can't fully verify client-side.
+  let candidateOrderNo = nextOrderNo(targetOrders);
+  let inserted: Order | null = null;
+  let error: { message: string; code?: string } | null = null;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const result = await supabase
+      .from("orders")
+      .insert({ ...baseOrder, order_no: candidateOrderNo })
+      .select()
+      .single();
+    if (!result.error) {
+      inserted = result.data;
+      error = null;
+      break;
+    }
+    error = result.error;
+    const isOrderNoConflict =
+      result.error.code === "23505" && result.error.message.includes("order_no");
+    if (!isOrderNoConflict) break;
+    const bumped = Number(candidateOrderNo.replace("SP-", "")) + 1;
+    candidateOrderNo = `SP-${bumped}`;
+  }
+  if (error || !inserted) return { ok: false, error: error?.message ?? "Sipariş oluşturulamadı." };
 
   const historyEntry = {
     id: newId(),
@@ -872,6 +896,39 @@ export async function setCompanyType(companyId: string, companyType: CompanyType
   return { ok: true };
 }
 
+// Soft delete — the row stays in the database (orders and history keep
+// their company_id), but RLS excludes it from every future read, and
+// deactivating it blocks anyone in it from logging in.
+export async function deleteCompany(companyId: string): Promise<Result> {
+  const { error } = await supabase
+    .from("companies")
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq("id", companyId);
+  if (error) return { ok: false, error: error.message };
+
+  update({
+    companies: snapshot.companies.filter((c) => c.id !== companyId),
+  });
+  return { ok: true };
+}
+
+export async function removeCompanyLogo(companyId: string): Promise<Result> {
+  const { error } = await supabase.from("companies").update({ logo_url: null }).eq("id", companyId);
+  if (error) return { ok: false, error: error.message };
+
+  // Best-effort storage cleanup — a stale file left behind doesn't affect
+  // anything still working, so a failure here shouldn't block the removal.
+  const { data: files } = await supabase.storage.from("logos").list(companyId);
+  if (files && files.length > 0) {
+    await supabase.storage.from("logos").remove(files.map((f) => `${companyId}/${f.name}`));
+  }
+
+  update({
+    companies: snapshot.companies.map((c) => (c.id === companyId ? { ...c, logo_url: null } : c)),
+  });
+  return { ok: true };
+}
+
 export async function setUserActive(userId: string, isActive: boolean): Promise<Result> {
   const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
@@ -980,8 +1037,10 @@ export function useData() {
     updateCompanyAdmin,
     setCompanyActive,
     setCompanyType,
+    deleteCompany,
     setUserActive,
     uploadCompanyLogo,
+    removeCompanyLogo,
     addCompanyMatch,
     removeCompanyMatch,
     actingUser,

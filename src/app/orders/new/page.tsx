@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Copy, Factory, Package, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,7 +35,6 @@ export default function NewOrderPage() {
     companies,
     companyMatches,
     company,
-    actingUser,
     can,
     createOrder,
   } = useData();
@@ -47,6 +46,7 @@ export default function NewOrderPage() {
 
   const [ureticiId, setUreticiId] = useState<string>("");
   const activeUreticiId = isMusteri ? ureticiId : company?.id;
+  const ureticiName = companies.find((c) => c.id === activeUreticiId)?.name ?? null;
 
   // For an üretici this is just their own schema; for a müşteri it's the
   // schema belonging to whichever üretici they picked above.
@@ -143,7 +143,7 @@ export default function NewOrderPage() {
     router.push("/");
   }
 
-  if (loaded && !can("create_order")) {
+  if (loaded && (!can("create_order") || !isMusteri)) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
@@ -155,7 +155,9 @@ export default function NewOrderPage() {
     );
   }
 
-  if (loaded && isMusteri && matchedUreticiler.length === 0) {
+  // Past the guard above, only a müşteri ever reaches this point — an
+  // üretici doesn't create its own orders (yet).
+  if (loaded && matchedUreticiler.length === 0) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
@@ -170,33 +172,11 @@ export default function NewOrderPage() {
     );
   }
 
-  if (loaded && !isMusteri && fields.length === 0) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
-        <p className="text-muted-foreground">
-          Henüz hiç sipariş alanı tanımlı değil — siparişin içi boş olurdu.
-        </p>
-        <Button asChild>
-          <Link href="/company?tab=fields">Sipariş alanlarını ayarla</Link>
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            ← Tüm siparişler
-          </Link>
           <h1 className="text-2xl font-semibold tracking-tight">Yeni sipariş</h1>
-          <p className="text-sm text-muted-foreground">
-            {firstStage
-              ? `Listenizdeki ilk aşama olan “${firstStage}” ile başlar. Oluşturan: ${actingUser?.name ?? "—"}.`
-              : "Önce bir aşama ekleyin — siparişin başlayacağı bir yer gerekli."}
-          </p>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={() => router.push("/")}>
@@ -208,135 +188,128 @@ export default function NewOrderPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        {isMusteri && (
-          <SectionCard
-            icon={<Factory className="size-4" />}
-            title="Üretici"
-            description="Bu sipariş hangi üretici için oluşturuluyor?"
-          >
-            <div className="grid gap-2 sm:max-w-sm">
-              <Label htmlFor="uretici-select">Üretici</Label>
-              <Select value={ureticiId} onValueChange={handleUreticiChange}>
-                <SelectTrigger id="uretici-select" className="w-full">
-                  <SelectValue placeholder="Bir üretici seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {matchedUreticiler.map((uretici) => (
-                    <SelectItem key={uretici.id} value={uretici.id}>
-                      {uretici.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </SectionCard>
-        )}
-
-        {perOrder.length > 0 && (
-          <SectionCard
-            icon={<ClipboardList className="size-4" />}
-            title="Sipariş bilgileri"
-            description="Sipariş için bir kez doldurulur."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              {perOrder.map((field) => (
-                <div
-                  key={field.id}
-                  className={field.type === "textarea" ? "sm:col-span-2" : undefined}
-                >
-                  <FieldInput
-                    field={field}
-                    value={valueFor(field.key)}
-                    onChange={(value) => setOrderValue(field.key, value)}
-                    error={orderErrors[field.key]}
-                  />
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {perItem.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Kalemler</h2>
-                <p className="text-sm text-muted-foreground">
-                  Bu siparişte {drafts.length} kalem var.
-                </p>
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="space-y-4">
+          {isMusteri && (
+            <SectionCard
+              title="Üretici"
+              description="Bu sipariş hangi üretici için oluşturuluyor?"
+              contentFramed
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="uretici-select">Üretici</Label>
+                <Select value={ureticiId} onValueChange={handleUreticiChange}>
+                  <SelectTrigger id="uretici-select" className="w-full">
+                    <SelectValue placeholder="Bir üretici seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {matchedUreticiler.map((uretici) => (
+                      <SelectItem key={uretici.id} value={uretici.id}>
+                        {uretici.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Button type="button" variant="outline" onClick={() => addItem()}>
-                <Plus className="size-4" />
-                Kalem ekle
-              </Button>
-            </div>
+            </SectionCard>
+          )}
 
-            {drafts.map((item, index) => (
-              <SectionCard
-                key={item.id}
-                icon={<Package className="size-4" />}
-                title={`Kalem ${index + 1}`}
-                action={
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addItem(item)}
-                      title="Bu kalemi kopyala"
-                    >
-                      <Copy className="size-4" />
-                      Kopyala
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeItem(item.id)}
-                      disabled={drafts.length === 1}
-                      title="Bu kalemi sil"
-                    >
-                      <Trash2 className="size-4" />
-                      Sil
-                    </Button>
-                  </div>
-                }
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {perItem.map((field) => (
-                    <div
-                      key={field.id}
-                      className={field.type === "textarea" ? "sm:col-span-2" : undefined}
-                    >
+          {perItem.length > 0 ? (
+            <div className="space-y-4">
+              {drafts.map((item, index) => (
+                <SectionCard
+                  key={item.id}
+                  title={`Kalem ${index + 1}`}
+                  contentFramed
+                  action={
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addItem(item)}
+                        title="Bu kalemi kopyala"
+                      >
+                        <Copy className="size-4" />
+                        Kopyala
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeItem(item.id)}
+                        disabled={drafts.length === 1}
+                        title="Bu kalemi sil"
+                      >
+                        <Trash2 className="size-4" />
+                        Sil
+                      </Button>
+                    </div>
+                  }
+                >
+                  <div className="grid gap-4">
+                    {perItem.map((field) => (
                       <FieldInput
+                        key={field.id}
                         field={field}
                         value={item.values[field.key] ?? null}
                         onChange={(value) => setItemValue(item.id, field.key, value)}
                         error={itemErrors[item.id]?.[field.key]}
                       />
-                    </div>
-                  ))}
-                </div>
-              </SectionCard>
-            ))}
+                    ))}
+                  </div>
+                </SectionCard>
+              ))}
 
-            <Button type="button" variant="outline" className="w-full" onClick={() => addItem()}>
-              <Plus className="size-4" />
-              Başka kalem ekle
-            </Button>
-          </div>
-        ) : (
-          !isMusteri && (
-            <p className="text-sm text-muted-foreground">
-              Bu siparişte kalem yok. Bir siparişe birden fazla kalem koymak için{" "}
-              <Link href="/company?tab=fields" className="underline">
-                Sipariş alanları
-              </Link>{" "}
-              ekranından bir alanın kapsamını <span className="font-medium">Kalem</span> yapın.
-            </p>
-          )
-        )}
+              <Button type="button" variant="outline" className="w-full" onClick={() => addItem()}>
+                <Plus className="size-4" />
+                Başka kalem ekle
+              </Button>
+            </div>
+          ) : (
+            !isMusteri && (
+              <p className="text-sm text-muted-foreground">
+                Bu siparişte kalem yok. Bir siparişe birden fazla kalem koymak için{" "}
+                <Link href="/company?tab=fields" className="underline">
+                  Sipariş alanları
+                </Link>{" "}
+                ekranından bir alanın kapsamını <span className="font-medium">Kalem</span> yapın.
+              </p>
+            )
+          )}
+        </div>
+
+        <div className="space-y-6">
+          <SectionCard title="Sipariş bilgileri" contentFramed>
+            <dl className="grid gap-2 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">Kalem sayısı</dt>
+                <dd className="font-medium tabular-nums">{drafts.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="shrink-0 text-muted-foreground">Üretici</dt>
+                <dd className="min-w-0 truncate font-medium" title={ureticiName ?? undefined}>
+                  {ureticiName ?? "—"}
+                </dd>
+              </div>
+            </dl>
+
+            {perOrder.length > 0 && (
+              <div className="space-y-4 border-t border-border pt-4">
+                <p className="text-sm font-medium text-foreground">Ek bilgiler</p>
+                {perOrder.map((field) => (
+                  <FieldInput
+                    key={field.id}
+                    field={field}
+                    value={valueFor(field.key)}
+                    onChange={(value) => setOrderValue(field.key, value)}
+                    error={orderErrors[field.key]}
+                  />
+                ))}
+              </div>
+            )}
+          </SectionCard>
+        </div>
       </div>
     </form>
   );

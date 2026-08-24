@@ -116,6 +116,7 @@ export function StagesManager() {
                     <TableCell>
                       {editing ? (
                         <Input
+                          size="sm"
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                           onKeyDown={(event) => {

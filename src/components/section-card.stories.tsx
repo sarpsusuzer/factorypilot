@@ -84,7 +84,7 @@ export const WithCustomAction: Story = {
       icon={<Users />}
       title="Ekip etkinliği"
       action={
-        <Button variant="ghost" size="xs">
+        <Button variant="ghost" size="sm">
           Son 7 gün
         </Button>
       }

@@ -42,6 +42,7 @@ function CompanyPageContent() {
     can,
     company,
     uploadCompanyLogo,
+    removeCompanyLogo,
     orders,
     fields,
     history,
@@ -49,6 +50,7 @@ function CompanyPageContent() {
     updateSettings,
   } = useData();
   const [uploading, setUploading] = useState(false);
+  const [removingLogo, setRemovingLogo] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -82,6 +84,18 @@ function CompanyPageContent() {
     }
     toast.success("Logo güncellendi.");
     if (inputRef.current) inputRef.current.value = "";
+  }
+
+  async function handleRemoveLogo() {
+    if (!company) return;
+    setRemovingLogo(true);
+    const result = await removeCompanyLogo(company.id);
+    setRemovingLogo(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Logo kaldırıldı.");
   }
 
   const canManageFields = can("manage_fields");
@@ -131,14 +145,26 @@ function CompanyPageContent() {
                   disabled={uploading}
                   className="hidden"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={uploading}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  {uploading ? "Yükleniyor…" : "Logo yükle"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploading}
+                    onClick={() => inputRef.current?.click()}
+                  >
+                    {uploading ? "Yükleniyor…" : company?.logo_url ? "Logoyu değiştir" : "Logo yükle"}
+                  </Button>
+                  {company?.logo_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={removingLogo}
+                      onClick={handleRemoveLogo}
+                    >
+                      {removingLogo ? "Kaldırılıyor…" : "Kaldır"}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">PNG, JPG veya SVG.</p>
               </div>
             </div>

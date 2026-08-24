@@ -207,7 +207,8 @@ export default function ReportingPage() {
                   }}
                   max={customEnd || undefined}
                   aria-label="Başlangıç tarihi"
-                  className="h-8 text-xs"
+                  size="md"
+                  className="text-xs"
                 />
                 <span className="text-xs text-muted-foreground">–</span>
                 <Input
@@ -219,7 +220,8 @@ export default function ReportingPage() {
                   }}
                   min={customStart || undefined}
                   aria-label="Bitiş tarihi"
-                  className="h-8 text-xs"
+                  size="md"
+                  className="text-xs"
                 />
               </div>
             </div>
@@ -254,6 +256,7 @@ export default function ReportingPage() {
         icon={<PieChart className="size-4" />}
         title="Sipariş durumları"
         description={`${periodLabel} — aşamalara göre dağılım.`}
+        contentFramed={false}
       >
         <OrderStatusBar orders={periodOrders} stages={stages} />
       </SectionCard>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Eye, Kanban, Layers, List, PieChart, Search, TriangleAlert, User } from "lucide-react";
+import { Check, ChevronDown, Eye, Kanban, Layers, List, Search, TriangleAlert, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { OrderStatusBar } from "@/components/order-status-bar";
@@ -172,7 +172,7 @@ export default function OrdersPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Siparişler</h1>
-        {can("create_order") && (
+        {can("create_order") && company?.company_type === "musteri" && (
           <Button asChild>
             <Link href="/orders/new">Yeni sipariş</Link>
           </Button>
@@ -194,9 +194,10 @@ export default function OrdersPage() {
       </div>
 
       <SectionCard
-        icon={<PieChart className="size-4" />}
         title="Sipariş durumları"
-        description="Tüm siparişlerin aşamalara göre dağılımı."
+        className="bg-background p-1.5"
+        titleClassName="text-[13px] font-normal text-muted-foreground"
+        contentFramed={false}
       >
         <OrderStatusBar orders={orders} stages={stages} />
       </SectionCard>
@@ -273,7 +274,8 @@ export default function OrdersPage() {
                     }}
                     max={customEnd || undefined}
                     aria-label="Başlangıç tarihi"
-                    className="h-8 text-xs"
+                    size="md"
+                    className="text-xs"
                   />
                   <span className="text-xs text-muted-foreground">–</span>
                   <Input
@@ -285,7 +287,8 @@ export default function OrdersPage() {
                     }}
                     min={customStart || undefined}
                     aria-label="Bitiş tarihi"
-                    className="h-8 text-xs"
+                    size="md"
+                    className="text-xs"
                   />
                 </div>
               </div>
@@ -430,7 +433,7 @@ export default function OrdersPage() {
                       <StageBadge stage={order.current_stage} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button asChild variant="outline" size="icon" className="rounded-full">
+                      <Button asChild variant="outline" size="icon-sm" className="rounded-full">
                         <Link href={`/orders/view?id=${order.id}`} aria-label={`${order.order_no} siparişini aç`}>
                           <Eye className="size-4" />
                         </Link>

@@ -9,10 +9,10 @@ const meta = {
     docs: {
       description: {
         component:
-          "One segmented bar plus a legend showing how orders split across stages. Segments are " +
-          "sized by share, coloured from each stage's own swatch, and separated by a 2px " +
-          "*background-coloured* border rather than a darker rule — so the division reads as a " +
-          "gap rather than a line.\n\n" +
+          "One thick segmented bar plus a legend showing how orders split across stages. Each " +
+          "segment is its own rounded rect, coloured from that stage's own swatch, sized by " +
+          "share via `flex-grow` (not a raw width percentage) so the real `gap-1.5` between " +
+          "segments doesn't throw the proportions off.\n\n" +
           "Empty stages are dropped from the bar but kept in the legend, so a stage sitting at " +
           "zero is still visible as a stage that exists.",
       },

@@ -25,12 +25,12 @@ export function FieldFileList({ files }: { files: StoredFile[] }) {
           </span>
           {file.dataUrl ? (
             <span className="flex shrink-0 gap-1">
-              <Button asChild variant="ghost" size="icon" className="size-7" title="Yeni sekmede aç">
+              <Button asChild variant="ghost" size="icon-sm" title="Yeni sekmede aç">
                 <a href={file.dataUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3.5" />
                 </a>
               </Button>
-              <Button asChild variant="ghost" size="icon" className="size-7" title="İndir">
+              <Button asChild variant="ghost" size="icon-sm" title="İndir">
                 <a href={file.dataUrl} download={file.name}>
                   <Download className="size-3.5" />
                 </a>

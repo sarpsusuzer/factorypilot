@@ -28,6 +28,7 @@ export const companies: Company[] = [
     is_active: true,
     created_at: "2026-01-12T09:00:00.000Z",
     company_type: "uretici",
+    deleted_at: null,
   },
   {
     id: MUSTERI_ID,
@@ -36,6 +37,7 @@ export const companies: Company[] = [
     is_active: true,
     created_at: "2026-02-03T09:00:00.000Z",
     company_type: "musteri",
+    deleted_at: null,
   },
 ];
 

@@ -144,6 +144,7 @@ export default function UsersPage() {
                     <TableCell>
                       {editing ? (
                         <Input
+                          size="sm"
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                           onKeyDown={(event) => {
@@ -193,6 +194,7 @@ export default function UsersPage() {
                         ) : resettingId === user.id ? (
                           <>
                             <Input
+                              size="sm"
                               type="password"
                               value={resetPassword}
                               onChange={(event) => setResetPassword(event.target.value)}

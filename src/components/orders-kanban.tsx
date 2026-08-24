@@ -193,7 +193,7 @@ export function OrdersKanban({
                                     <TriangleAlert className="size-3 text-destructive" aria-label="Gecikmiş" />
                                   )}
                                 </span>
-                                <Button asChild variant="ghost" size="icon" className="-mt-1 -mr-1 size-6">
+                                <Button asChild variant="ghost" size="icon-sm" className="-mt-1 -mr-1">
                                   <Link
                                     href={`/orders/view?id=${order.id}`}
                                     draggable={false}

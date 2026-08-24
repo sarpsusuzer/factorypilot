@@ -141,6 +141,9 @@ export type Company = {
   is_active: boolean;
   created_at: string;
   company_type: CompanyType;
+  // Soft-delete marker. RLS excludes deleted rows from every read, so a
+  // company the client can see always has this null in practice.
+  deleted_at: string | null;
 };
 
 /** A müşteri company matched to an üretici — see orders.customer_company_id. */

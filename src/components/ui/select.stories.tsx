@@ -18,9 +18,11 @@ const meta = {
     docs: {
       description: {
         component:
-          "Radix select. The trigger matches Input's height and border so a form mixing the two " +
-          "stays on one baseline. Used for stage pickers, role assignment, and any `select` field " +
-          "type on a configured order form.",
+          "Radix select. The trigger's `size` prop is the same 28 / 32 / 40 / 50 scale as Button " +
+          "and Input, `default` is 40 — every bare `<SelectTrigger>` gets it, including every " +
+          "dropdown in the app, so a select sitting next to a search bar or a submit button " +
+          "lines up without anyone sizing it by hand. Used for stage pickers, role assignment, " +
+          "and any `select` field type on a configured order form.",
       },
     },
   },
@@ -86,6 +88,25 @@ export const Grouped: Story = {
           </SelectGroup>
         </SelectContent>
       </Select>
+    </div>
+  ),
+};
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="grid gap-3">
+      {(["sm", "md", "default", "lg"] as const).map((size) => (
+        <Select key={size} defaultValue="bisiklet">
+          <SelectTrigger size={size === "default" ? undefined : size}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="bisiklet">
+              {size} · {{ sm: 28, md: 32, default: 40, lg: 50 }[size]}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      ))}
     </div>
   ),
 };

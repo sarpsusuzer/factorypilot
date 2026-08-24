@@ -9,14 +9,17 @@ const meta = {
     docs: {
       description: {
         component:
-          "32px tall to line up with the default Button. Font-size is 16px below the `md` " +
-          "breakpoint and 14px above it — the larger mobile size is what stops iOS Safari from " +
-          "zooming the viewport on focus.",
+          "40px tall by default — the same 28 / 32 / 40 / 50 (`sm` / `md` / `default` / `lg`) " +
+          "scale as Button and Select, so a search bar, a dropdown, and a submit button on one " +
+          "row line up without anyone having to size them individually. Font-size is 16px below " +
+          "the `md` breakpoint and 14px above it — the larger mobile size is what stops iOS " +
+          "Safari from zooming the viewport on focus.",
       },
     },
   },
   argTypes: {
     type: { control: "select", options: ["text", "email", "password", "number", "date", "file"] },
+    size: { control: "select", options: ["sm", "md", "default", "lg"] },
     disabled: { control: "boolean" },
     placeholder: { control: "text" },
   },
@@ -58,6 +61,29 @@ export const States: Story = {
         <Label htmlFor="s-disabled">Devre dışı</Label>
         <Input id="s-disabled" disabled defaultValue="Değiştirilemez" />
       </div>
+    </div>
+  ),
+};
+
+export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`sm` (28) is reserved for an input sitting inline in a table row next to `sm` Buttons " +
+          "— see the rename fields on the Stages, Users and Companies screens. `md` (32) is a " +
+          "deliberately compact context, like the date-range fields inside the reporting filter " +
+          "popover. Everything else — every standalone form field, the order search bar — is " +
+          "`default` (40).",
+      },
+    },
+  },
+  render: () => (
+    <div className="grid max-w-xs gap-3">
+      <Input size="sm" placeholder="sm · 28" />
+      <Input size="md" placeholder="md · 32" />
+      <Input placeholder="default · 40" />
+      <Input size="lg" placeholder="lg · 50" />
     </div>
   ),
 };

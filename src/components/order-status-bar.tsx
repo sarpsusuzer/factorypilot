@@ -12,19 +12,16 @@ export function OrderStatusBar({ orders, stages }: { orders: Order[]; stages: St
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex h-4 w-full overflow-hidden rounded-full bg-muted">
+    <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+      <div className="flex h-11 w-full gap-1.5">
         {counts
           .filter(({ count }) => count > 0)
-          .map(({ stage, count }, index, visible) => (
+          .map(({ stage, count }) => (
             <div
               key={stage.id}
               title={`${stage.name}: ${count}`}
-              className={cn(
-                stageColorDot(stage.color),
-                index < visible.length - 1 && "border-r-2 border-background",
-              )}
-              style={{ width: `${(count / orders.length) * 100}%` }}
+              className={cn("rounded-lg", stageColorDot(stage.color))}
+              style={{ flex: `${count} ${count} 0%` }}
             />
           ))}
       </div>

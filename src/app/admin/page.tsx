@@ -1,9 +1,10 @@
 "use client";
 
-import { Building2, Plus } from "lucide-react";
+import { Building2, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SectionCard } from "@/components/section-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useData } from "@/lib/data";
+import { cn } from "@/lib/utils";
 import type { Company, CompanyType } from "@/lib/types";
 
 const COMPANY_TYPE_LABELS: Record<CompanyType, string> = {
@@ -50,6 +59,7 @@ export default function AdminCompaniesPage() {
     setCompanyActive,
     setCompanyType,
     updateCompanyAdmin,
+    deleteCompany,
   } = useData();
   const [name, setName] = useState("");
   const [companyType, setNewCompanyType] = useState<CompanyType>("uretici");
@@ -58,6 +68,8 @@ export default function AdminCompaniesPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [editingAdminFor, setEditingAdminFor] = useState<Company | null>(null);
   const [adminEditName, setAdminEditName] = useState("");
@@ -107,6 +119,19 @@ export default function AdminCompaniesPage() {
   async function handleTypeChange(companyId: string, type: CompanyType) {
     const result = await setCompanyType(companyId, type);
     if (!result.ok) toast.error(result.error);
+  }
+
+  async function handleDelete() {
+    if (!deletingCompany) return;
+    setDeleting(true);
+    const result = await deleteCompany(deletingCompany.id);
+    setDeleting(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(`“${deletingCompany.name}” silindi.`);
+    setDeletingCompany(null);
   }
 
   async function handleRename(companyId: string) {
@@ -165,15 +190,16 @@ export default function AdminCompaniesPage() {
           icon={<Building2 className="size-4" />}
           title="Şirketler"
           description={loaded ? `${companies.length} şirket` : "Yükleniyor…"}
+          contentFramed
         >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ad</TableHead>
+                  <TableHead className="w-48">Ad</TableHead>
                   <TableHead>Tür</TableHead>
                   <TableHead>Kullanıcı</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead className="w-80 text-right">İşlemler</TableHead>
+                  <TableHead className="w-16 text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,6 +211,7 @@ export default function AdminCompaniesPage() {
                       <TableCell className="font-medium">
                         {editing ? (
                           <Input
+                            size="sm"
                             value={editingName}
                             onChange={(event) => setEditingName(event.target.value)}
                             onKeyDown={(event) => {
@@ -194,16 +221,18 @@ export default function AdminCompaniesPage() {
                             autoFocus
                           />
                         ) : (
-                          <span className="flex items-center gap-2">
+                          <span className="flex min-w-0 items-center gap-2">
                             {company.logo_url && (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={company.logo_url}
                                 alt=""
-                                className="size-6 rounded object-contain"
+                                className="size-6 shrink-0 rounded object-contain"
                               />
                             )}
-                            {company.name}
+                            <span className="max-w-[160px] truncate" title={company.name}>
+                              {company.name}
+                            </span>
                           </span>
                         )}
                       </TableCell>
@@ -225,45 +254,73 @@ export default function AdminCompaniesPage() {
                         </Select>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{userCount}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {company.is_active ? "Aktif" : "Pasif"}
+                      <TableCell>
+                        <Badge
+                          className={cn(
+                            "gap-1.5 font-medium",
+                            company.is_active
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-slate-100 text-slate-700",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "size-1.5 shrink-0 rounded-full",
+                              company.is_active ? "bg-emerald-500" : "bg-slate-500",
+                            )}
+                          />
+                          {company.is_active ? "Aktif" : "Pasif"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {editing ? (
-                            <>
-                              <Button size="sm" onClick={() => handleRename(company.id)}>
-                                Kaydet
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
-                                Vazgeç
-                              </Button>
-                            </>
-                          ) : (
-                            <>
+                        {editing ? (
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button size="sm" onClick={() => handleRename(company.id)}>
+                              Kaydet
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                              Vazgeç
+                            </Button>
+                          </div>
+                        ) : (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                               <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
+                                size="icon-sm"
+                                variant="ghost"
+                                aria-label={`${company.name} işlemleri`}
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onSelect={() => {
                                   setEditingId(company.id);
                                   setEditingName(company.name);
                                 }}
                               >
                                 Düzenle
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleToggleActive(company.id, !company.is_active)}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => handleToggleActive(company.id, !company.is_active)}
                               >
                                 {company.is_active ? "Pasif yap" : "Aktif yap"}
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => openAdminEdit(company)}>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => openAdminEdit(company)}>
                                 Yönetici
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => setDeletingCompany(company)}
+                              >
+                                <Trash2 className="size-4" />
+                                Sil
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -276,6 +333,7 @@ export default function AdminCompaniesPage() {
           icon={<Plus className="size-4" />}
           title="Şirket ekle"
           description="Şirket için varsayılan aşamalar ve sipariş alanları otomatik oluşturulur."
+          contentFramed
         >
             <form onSubmit={handleCreate} className="grid gap-4">
               <div className="grid gap-2">
@@ -389,6 +447,32 @@ export default function AdminCompaniesPage() {
               <Button type="submit">Kaydet</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deletingCompany !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingCompany(null);
+        }}
+      >
+        <DialogContent showCloseButton={false} onInteractOutside={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{deletingCompany?.name} silinsin mi?</DialogTitle>
+            <DialogDescription>
+              Şirket ve verileri (siparişler, geçmiş) veritabanında kalır, ancak şirket kimse giriş
+              yapamayacak şekilde pasif hale gelir ve bu listeden kalıcı olarak kaybolur. Bu işlem
+              buradan geri alınamaz.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeletingCompany(null)}>
+              Vazgeç
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Siliniyor…" : "Şirketi sil"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

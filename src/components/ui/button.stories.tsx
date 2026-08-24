@@ -9,9 +9,13 @@ const meta = {
     docs: {
       description: {
         component:
-          "Six variants across nine sizes. The press affordance is a 1px downward nudge rather " +
-          "than a shadow or scale — consistent with the no-shadow rule. Buttons that open a menu " +
-          "(`aria-haspopup`) skip the nudge, since the menu appearing is already the feedback.",
+          "Six variants on a fixed 28 / 32 / 40 / 50 height scale (`sm` / `md` / `default` / `lg`), " +
+          "shared with Input and Select — `default` is 40 and is what every bare `<Button>` gets " +
+          "unless a size is stated. Hover and active states are both a fill-colour step **and** a " +
+          "1px downward nudge on press, so pressed reads as pressed rather than a flat colour swap " +
+          "— consistent with the no-shadow rule (no drop shadow does the lifting instead). Buttons " +
+          "that open a menu (`aria-haspopup`) skip the nudge, since the menu appearing is already " +
+          "the feedback.",
       },
     },
   },
@@ -22,7 +26,7 @@ const meta = {
     },
     size: {
       control: "select",
-      options: ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"],
+      options: ["sm", "md", "default", "lg", "icon-sm", "icon-md", "icon", "icon-lg"],
     },
     disabled: { control: "boolean" },
     children: { control: "text" },
@@ -59,19 +63,28 @@ export const Variants: Story = {
 };
 
 export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "28 · 32 · 40 · 50. `default` (40) is unlabeled here on purpose — it's what you get by " +
+          "just not passing a `size` prop, same as every other bare `<Button>` in the app.",
+      },
+    },
+  },
   render: () => (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button size="xs">xs</Button>
-        <Button size="sm">sm</Button>
-        <Button size="default">default</Button>
-        <Button size="lg">lg</Button>
+      <div className="flex flex-wrap items-end gap-3">
+        <Button size="sm">sm · 28</Button>
+        <Button size="md">md · 32</Button>
+        <Button>default · 40</Button>
+        <Button size="lg">lg · 50</Button>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button size="icon-xs" aria-label="Ekle">
+      <div className="flex flex-wrap items-end gap-3">
+        <Button size="icon-sm" aria-label="Ekle">
           <Plus />
         </Button>
-        <Button size="icon-sm" aria-label="Ekle">
+        <Button size="icon-md" aria-label="Ekle">
           <Plus />
         </Button>
         <Button size="icon" aria-label="Ekle">
@@ -81,6 +94,33 @@ export const Sizes: Story = {
           <Plus />
         </Button>
       </div>
+    </div>
+  ),
+};
+
+export const HoverAndPressed: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Every variant carries three distinct states — rest, hover, active — so a press is " +
+          "unambiguous. `default` and `destructive` step through their own colour family (getting " +
+          "lighter on hover, lighter still on press, since darkening an already near-black fill is " +
+          "barely visible); the light-surface variants (`outline`, `secondary`, `ghost`) hover to " +
+          "`--accent` and press to the darker `--border` token, reusing existing design tokens " +
+          "instead of inventing new ones. Focus this story and Tab through the buttons to see the " +
+          "focus ring, or click and hold to see the press state.",
+      },
+    },
+  },
+  render: () => (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button>Default</Button>
+      <Button variant="outline">Outline</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="destructive">Destructive</Button>
+      <Button variant="link">Link</Button>
     </div>
   ),
 };
