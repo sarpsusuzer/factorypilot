@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ClipboardList, Gauge, LineChart, ShieldCheck, Users2 } from "lucide-react";
+import { Building2, ClipboardList, LineChart, ShieldCheck, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
@@ -16,7 +16,6 @@ const LINKS: {
   permission?: Permission;
 }[] = [
   { href: "/", label: "Siparişler", icon: ClipboardList },
-  { href: "/overview", label: "Overview", icon: Gauge },
   { href: "/reporting", label: "Raporlar", icon: LineChart, permission: "view_reporting" },
   { href: "/roles", label: "Roller", icon: ShieldCheck, permission: "manage_roles" },
   { href: "/users", label: "Kullanıcılar", icon: Users2, permission: "manage_roles" },
