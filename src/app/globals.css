@@ -64,49 +64,53 @@
 }
 
 :root {
-  /* Mission Control design-system preview (open-design/design-systems/mission-control).
-     Dark command-center palette — this system has no light mode by design,
-     so :root and .dark are intentionally identical. */
-  --background: #090b12;
-  --foreground: #f8fafc;
-  --card: #121722;
-  --card-foreground: #f8fafc;
-  --popover: #1b2233;
-  --popover-foreground: #f8fafc;
-  --primary: #60a5fa;
-  --primary-foreground: #06101d;
-  --secondary: #1b2233;
-  --secondary-foreground: #f8fafc;
-  --muted: #121722;
-  --muted-foreground: #94a3b8;
-  --accent: #1b2233;
-  --accent-foreground: #f8fafc;
-  --destructive: #ff4757;
-  --destructive-foreground: #f8fafc;
-  --border: #2a3447;
-  --input: #2a3447;
-  --ring: #60a5fa;
-  --chart-1: #60a5fa;
-  --chart-2: #26de81;
-  --chart-3: #fbbf24;
-  --chart-4: #ff4757;
+  /* Mission Control design-system preview (open-design/design-systems/mission-control),
+     adapted to light: the source system is dark-only by design (no light
+     variant ships in open-design), so this keeps its accent hues (blue
+     primary, green/amber/red status colors) on a light neutral surface
+     instead. The original dark command-center palette lives in .dark below. */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #dc2626;
   --chart-5: #94a3b8;
   --radius: 4px;
-  --sidebar: #121722;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #60a5fa;
-  --sidebar-primary-foreground: #06101d;
-  --sidebar-accent: #1b2233;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #2a3447;
-  --sidebar-ring: #60a5fa;
-  /* The one deliberate inverse surface — light tooltips/toasts on this dark theme. */
-  --inverse: #f8fafc;
-  --inverse-foreground: #090b12;
-  --inverse-muted-foreground: #64646c;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563eb;
+  /* The one deliberate inverse surface — dark tooltips/toasts on this light theme. */
+  --inverse: #0f172a;
+  --inverse-foreground: #f8fafc;
+  --inverse-muted-foreground: #94a3b8;
 }
 
 .dark {
+  /* Mission Control's native dark command-center palette, kept as the
+     alternate theme (not wired to a toggle in this preview). */
   --background: #090b12;
   --foreground: #f8fafc;
   --card: #121722;
