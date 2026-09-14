@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-[#2A2A2F] active:bg-[#3A3A40]",
+          "bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80",
         outline:
-          "border-border bg-white text-secondary-foreground hover:bg-accent hover:text-foreground active:bg-border active:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
+          "border-border bg-background text-secondary-foreground hover:bg-accent hover:text-foreground active:bg-border active:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-accent active:bg-border aria-expanded:bg-accent aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-secondary hover:text-foreground active:bg-border active:text-foreground aria-expanded:bg-secondary aria-expanded:text-foreground",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-[#952016] active:bg-[#7A1911] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline active:opacity-70",
       },
       // Fixed 4-step scale shared with Input/Select: 28 / 32 / 40 / 50 (sm / md / default / lg).
